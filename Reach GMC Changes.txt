@@ -856,30 +856,3 @@ stat/aspect merit/access=DEL_Locus/Purified
 
 stat/rem merit=Locus
 
-
--=--=-=-=-=-=-=--==--=-=-=-=-==--=-=--=-=-=-=-=--=-=-=
-
-You paged Asgard with ‘See, here's the dillio: Because &_inventory stores the lookup number, the +inventory command is what turns that into 'gun' or 'pickles'. Which means the problem is /probably/ in the lookup, not the storage.’
-You paged Asgard with ‘That is, in the execution of +inv, not in you giving the object.’
-
---
-
-F.INVENTORY: $+inv*:
-	[switch( 
-		[t( rest( %0, / ))]
-		[t( match( lattr( %!/f.inventory.* ), f.inventory.[edit( first( %0 ), /, )] ))], 
-
-		0*, 
-		u( f.inventory.list, %#, %0 ), 
-
-		10*, err( %#, Could not find that switch. ), 
-
-		11*, u( f.inventory.[edit( first( %0 ), /, )], %#, rest( %0 )), 
-		#-1 State Error Inventory
-	 )]
-
-
---
-
-F.DISPLAY.INVENTORY: [pemit(%0, [wheader([if(not(strmatch(%0, %1)), [name(%1)]%(%1%)'s%b)]Inventory)]%r[u(f.display.list, Name, Type, Book, Page)]%r[ldivider()])][setq(c, 0)][pemit(%0, [list(u(%1/_EQUIP.INVENTORY), [setq(i, first(%i0, :))][u(f.display.list, u(%va/equip.%qi.name), u(%va/equip.%qi.type), u(%va/equip.%qi.book), u(%va/equip.%qi.page))][setq(c, inc(%qc))], |)][wfooter(%qc item[if(eq(%qc, 1), ,s)])])]
-
