@@ -1,0 +1,885 @@
+MARKED
+
+  FLAG: MARKED(m) (all types)
+
+  This flag is used by the database cleaning routines to check the
+  connectivity of the database, and also by the @mark commands to select
+  objects for special attention.  Since database cleaning is performed
+  automatically from time to time, automatic cleaning must be disabled
+  before using the @mark commands, and the command @mark_all/clear should
+  be run immediately before turning automatic cleaning back on.
+
+  Related Topics: @apply_marked, @dbck, @disable, @enable, @list, @mark,
+                  @mark_all.
+
+@MARK
+
+  COMMAND: @mark[/<switches>] [<player>] [<class>=<restriction>]
+
+  Sets or clears the MARKED flags for objects that match the search criteria.
+  This command may only be used when database cleaning is disabled (via
+  @disable cleaning), as cleaning uses the MARKED flag to check
+  connectivity.
+
+  The following switches are available:
+
+     /set    - (default) Set the MARKED flag on the selected objects.
+     /clear  - Clear the MARKED flag on the selected objects.
+
+  Related Topics: @apply_marked, @mark_all, MARKED, SEARCH CRITERIA.
+
+No entry for ‘@apply_marked’.
+@APPLY_MARKED
+
+  COMMAND: @apply_marked <command>
+
+  Performs <command> once for each object in the database that has its MARK
+  flag set, substituting the characters ## for the object number of the
+  marked object.  The command is performed by the player invoking the
+  @apply_marked command, not by the marked object.  This command may only
+  be used when database cleaning is disabled (via @disable cleaning),
+  as cleaning uses the MARKED flag to check connectivity.
+
+  Related Topics: @mark, @mark_all, MARKED.
+
+--
+
++bbpost 1/GMC Merits=Welcome to The Reach v1.5, now with GMC Merits. You will see on your sheet that you have a number of merits now prefaced CHNG and DEL. Some have changed values and some are going away outright. %r%rIf you haven't already, pick up the absolutely free God Machine Chronicle rules update from DriveThru RPG: %r%rhttp://rpg.drivethrustuff.com/product/114078/World-of-Darkness-The-God-Machine-Rules-Update %r%rBaltimore, or one of his lovely assistants, will start clearing templates for respecs so watch this space. Until he announces that we're done, be patient with each other on which version of the merits people are using. When in doubt, go with the one more favorable to the situation.
+
+
+--
+
+@disable cleaning
+@mark/set type=player
+
+
+@apply_marked &_merits ##=edit( get( ##/_merits ), Area_of_Expertise~, CHNG_Area_of_Expertise~, Common_Sense~, CHNG_Common_Sense~, Encyclopedic_Knowledge~, CHNG_Encyclopedic_Knowledge~, Good_Time_Management~, CHNG_Good_Time_Management~, Holistic_Awareness~, CHNG_Holistic_Awareness~, Indomitable~, CHNG_Indomitable~, Meditative_Mind~, CHNG_Meditative_Mind~, Multi-Lingual~, CHNG_Multi-Lingual~, Unseen_Sense~, CHNG_Unseen_Sense~, Unseen_Sense_(Spirits)~, DEL_Unseen_Sense_(Spirits)~, Barfly~, CHNG_Barfly~, Small_Unit_Tactics~, CHNG_Small_Unit_Tactics~, Striking_Looks~, CHNG_Striking_Looks~, Giant~, CHNG_Giant~, Animal_Finesse~, DEL_Animal_Finesse~, Strong_Lungs~, DEL_Strong_Lungs~, Iron_Stomach~, DEL_Iron_Stomach~, Brawling_Dodge~, DEL_Brawling_Dodge~, Weaponry_Dodge~, DEL_Weaponry_Dodge~, Natural_Immunity~, DEL_Natural_Immunity~, Fighting_Style_Aggressive_Striking~, DEL_Fighting_Style_Aggressive_Striking~, Fighting_Style_Aikido~, DEL_Fighting_Style_Aikido~, Fighting_Style_Berserker~, DEL_Fighting_Style_Berserker~, Fighting_Style_Boxing~, DEL_Fighting_Style_Boxing~, Fighting_Style_Chain_Weapons~, DEL_Fighting_Style_Chain_Weapons~, Fighting_Style_Combat_Art~, DEL_Fighting_Style_Combat_Art~, Fighting_Style_Combat_Marksmanship~, DEL_Fighting_Style_Combat_Marksmanship~, Fighting_Style_Defensive_Striking~, DEL_Fighting_Style_Defensive_Striking~, Fighting_Style_Evasive_Striking~, DEL_Fighting_Style_Evasive_Striking~, Fighting_Style_Fencing~, DEL_Fighting_Style_Fencing~, Fighting_Style_Filipino_Martial_Art~, DEL_Fighting_Style_Filipino_Martial_Art~, Fighting_Style_Formation_Tactics~, DEL_Fighting_Style_Formation_Tactics~, Fighting_Style_Gladiatorial~, DEL_Fighting_Style_Gladiatorial~, Fighting_Style_Iaido~, DEL_Fighting_Style_Iaido~, Fighting_Style_Judo~, DEL_Fighting_Style_Judo~, Fighting_Style_Jukendo~, DEL_Fighting_Style_Jukendo~, Fighting_Style_Krav_Maga~, DEL_Fighting_Style_Krav_Maga~, Fighting_Style_Kung_Fu~, DEL_Fighting_Style_Kung_Fu~, Fighting_Style_Langschwert~, DEL_Fighting_Style_Langschwert~, Fighting_Style_Mac~, DEL_Fighting_Style_Mac~, Fighting_Style_Muay_Thai~, DEL_Fighting_Style_Muay_Thai~, Fighting_Style_Qinna~, DEL_Fighting_Style_Qinna~, Fighting_Style_Shurikenjutsu~, DEL_Fighting_Style_Shurikenjutsu~, Fighting_Style_Sniping~, DEL_Fighting_Style_Sniping~, Fighting_Style_Social_Maneuvers~, DEL_Fighting_Style_Social_Maneuvers~, Fighting_Style_Sojutsu~, DEL_Fighting_Style_Sojutsu~, Fighting_Style_Spear_Fighting~, DEL_Fighting_Style_Spear_Fighting~, Fighting_Style_Spetsnaz_Knife_Fighting~, DEL_Fighting_Style_Spetsnaz_Knife_Fighting~, Fighting_Style_Staff_Fighting~, DEL_Fighting_Style_Staff_Fighting~ )
+
+@@ .. any more than this and the system stops processing, so we break it up 
+
+@apply_marked &_merits ##=edit( get( ##/_merits ), Fighting_Style_Sword_and_Shield~, DEL_Fighting_Style_Sword_and_Shield~, Fighting_Style_Two_Weapons~, DEL_Fighting_Style_Two_Weapons~, Ground_and_Pound~, DEL_Ground_and_Pound~, Weapons_to_Empty_Hands~, DEL_Weapons_to_Empty_Hands~, Student_of_the_Blade~, DEL_Student_of_the_Blade~, Entering_Strike~, DEL_Entering_Strike~, Gunslinger~, DEL_Gunslinger~, Fighting_Style_Grappling~, CHNG_Fighting_Style_Grappling~, Fighting_Style_Adamantine_Hand~, Adamantine_Hand~, Fighting_Style_Archery~, Archery~, Fighting_Style_Armored_Combat~, Armored_Combat~, Fighting_Style_Dream_Combat~, Dream_Combat~, Fighting_Style_Fury_Choir~, Fury_Choir~, Fighting_Style_Hedge_Duelist~, Hedge_Duelist~, Fighting_Style_Improvised_Weaponry~, Improvised_Weaponry~, Fighting_Style_Police_Tactics~, Police_Tactics~, Fighting_Style_Savage_Fury~, Savage_Fury~, Fighting_Style_Swarm_Tactics~, Swarm_Tactics~, Fighting_Style_Tooth_and_Claw~, Tooth_and_Claw~, Fighting_Style_Wolfpack~, Wolfpack~ )
+
+@mark_all/clear
+@enable cleaning
+
+
+---
+
+stat/add merit=CHNG_Area_of_Expertise
+stat/aspect merit/cost=CHNG_Area_of_Expertise/2
+stat/aspect merit/access=CHNG_Area_of_Expertise/all
+
+stat/add merit=CHNG_Common_Sense
+stat/aspect merit/cost=CHNG_Common_Sense/4
+stat/aspect merit/access=CHNG_Common_Sense/all
+
+stat/add merit=CHNG_Encyclopedic_Knowledge
+stat/aspect merit/cost=CHNG_Encyclopedic_Knowledge/4
+stat/aspect merit/access=CHNG_Encyclopedic_Knowledge/all
+
+stat/add merit=CHNG_Good_Time_Management
+stat/aspect merit/cost=CHNG_Good_Time_Management/2
+stat/aspect merit/access=CHNG_Good_Time_Management/all
+
+stat/add merit=CHNG_Holistic_Awareness
+stat/aspect merit/cost=CHNG_Holistic_Awareness/3
+stat/aspect merit/access=CHNG_Holistic_Awareness/all
+
+stat/add merit=CHNG_Indomitable
+stat/aspect merit/cost=CHNG_Indomitable/1-5
+stat/aspect merit/access=CHNG_Indomitable/all
+
+stat/add merit=CHNG_Meditative_Mind
+stat/aspect merit/cost=CHNG_Meditative_Mind/1
+stat/aspect merit/access=CHNG_Meditative_Mind/all
+
+stat/add merit=CHNG_Multi-Lingual
+stat/aspect merit/cost=CHNG_Multi-Lingual/1-5
+stat/aspect merit/access=CHNG_Multi-Lingual/all
+
+stat/add merit=CHNG_Unseen_Sense
+stat/aspect merit/cost=CHNG_Unseen_Sense/3
+stat/aspect merit/access=CHNG_Unseen_Sense/all
+
+stat/add merit=DEL_Unseen_Sense_(Spirits)
+stat/aspect merit/cost=DEL_Unseen_Sense_(Spirits)/1-4
+stat/aspect merit/access=DEL_Unseen_Sense_(Spirits)/all
+
+stat/add merit=CHNG_Barfly
+stat/aspect merit/cost=CHNG_Barfly/1
+stat/aspect merit/access=CHNG_Barfly/all
+
+stat/add merit=CHNG_Small_Unit_Tactics
+stat/aspect merit/cost=CHNG_Small_Unit_Tactics/3
+stat/aspect merit/access=CHNG_Small_Unit_Tactics/all
+
+stat/add merit=CHNG_Striking_Looks
+stat/aspect merit/cost=CHNG_Striking_Looks/2 4
+stat/aspect merit/access=CHNG_Striking_Looks/all
+
+stat/add merit=CHNG_Giant
+stat/aspect merit/cost=CHNG_Giant/4
+stat/aspect merit/access=CHNG_Giant/all
+
+stat/add merit=DEL_Animal_Finesse
+stat/aspect merit/cost=DEL_Animal_Finesse/2
+stat/aspect merit/access=DEL_Animal_Finesse/all
+
+stat/add merit=DEL_Strong_Lungs
+stat/aspect merit/cost=DEL_Strong_Lungs/3
+stat/aspect merit/access=DEL_Strong_Lungs/all
+
+stat/add merit=DEL_Iron_Stomach
+stat/aspect merit/cost=DEL_Iron_Stomach/2
+stat/aspect merit/access=DEL_Iron_Stomach/all
+
+stat/add merit=DEL_Brawling_Dodge
+stat/aspect merit/cost=DEL_Brawling_Dodge/1
+stat/aspect merit/access=DEL_Brawling_Dodge/all
+
+stat/add merit=DEL_Weaponry_Dodge
+stat/aspect merit/cost=DEL_Weaponry_Dodge/1
+stat/aspect merit/access=DEL_Weaponry_Dodge/all
+
+stat/add merit=DEL_Natural_Immunity
+stat/aspect merit/cost=DEL_Natural_Immunity/1
+stat/aspect merit/access=DEL_Natural_Immunity/all
+
+stat/add merit=DEL_Fighting_Style_Aggressive_Striking
+stat/aspect merit/cost=DEL_Fighting_Style_Aggressive_Striking/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Aggressive_Striking/all
+
+stat/add merit=DEL_Fighting_Style_Aikido
+stat/aspect merit/cost=DEL_Fighting_Style_Aikido/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Aikido/all
+
+stat/add merit=DEL_Fighting_Style_Berserker
+stat/aspect merit/cost=DEL_Fighting_Style_Berserker/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Berserker/all
+
+stat/add merit=DEL_Fighting_Style_Boxing
+stat/aspect merit/cost=DEL_Fighting_Style_Boxing/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Boxing/all
+
+stat/add merit=DEL_Fighting_Style_Chain_Weapons
+stat/aspect merit/cost=DEL_Fighting_Style_Chain_Weapons/1-4
+stat/aspect merit/access=DEL_Fighting_Style_Chain_Weapons/all
+
+stat/add merit=DEL_Fighting_Style_Combat_Art
+stat/aspect merit/cost=DEL_Fighting_Style_Combat_Art/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Combat_Art/all
+
+stat/add merit=DEL_Fighting_Style_Combat_Marksmanship
+stat/aspect merit/cost=DEL_Fighting_Style_Combat_Marksmanship/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Combat_Marksmanship/all
+
+stat/add merit=DEL_Fighting_Style_Defensive_Striking
+stat/aspect merit/cost=DEL_Fighting_Style_Defensive_Striking/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Defensive_Striking/all
+
+stat/add merit=DEL_Fighting_Style_Evasive_Striking
+stat/aspect merit/cost=DEL_Fighting_Style_Evasive_Striking/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Evasive_Striking/all
+
+stat/add merit=DEL_Fighting_Style_Fencing
+stat/aspect merit/cost=DEL_Fighting_Style_Fencing/1-4
+stat/aspect merit/access=DEL_Fighting_Style_Fencing/all
+
+stat/add merit=DEL_Fighting_Style_Filipino_Martial_Art
+stat/aspect merit/cost=DEL_Fighting_Style_Filipino_Martial_Art/1-4
+stat/aspect merit/access=DEL_Fighting_Style_Filipino_Martial_Art/all
+
+stat/add merit=DEL_Fighting_Style_Formation_Tactics
+stat/aspect merit/cost=DEL_Fighting_Style_Formation_Tactics/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Formation_Tactics/all
+
+stat/add merit=DEL_Fighting_Style_Gladiatorial
+stat/aspect merit/cost=DEL_Fighting_Style_Gladiatorial/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Gladiatorial/all
+
+stat/add merit=DEL_Fighting_Style_Iaido
+stat/aspect merit/cost=DEL_Fighting_Style_Iaido/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Iaido/all
+
+stat/add merit=DEL_Fighting_Style_Judo
+stat/aspect merit/cost=DEL_Fighting_Style_Judo/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Judo/all
+
+stat/add merit=DEL_Fighting_Style_Jukendo
+stat/aspect merit/cost=DEL_Fighting_Style_Jukendo/1-4
+stat/aspect merit/access=DEL_Fighting_Style_Jukendo/all
+
+stat/add merit=DEL_Fighting_Style_Krav_Maga
+stat/aspect merit/cost=DEL_Fighting_Style_Krav_Maga/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Krav_Maga/all
+
+stat/add merit=DEL_Fighting_Style_Kung_Fu
+stat/aspect merit/cost=DEL_Fighting_Style_Kung_Fu/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Kung_Fu/all
+
+stat/add merit=DEL_Fighting_Style_Langschwert
+stat/aspect merit/cost=DEL_Fighting_Style_Langschwert/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Langschwert/all
+
+stat/add merit=DEL_Fighting_Style_Mac
+stat/aspect merit/cost=DEL_Fighting_Style_Mac/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Mac/all
+
+stat/add merit=DEL_Fighting_Style_Muay_Thai
+stat/aspect merit/cost=DEL_Fighting_Style_Muay_Thai/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Muay_Thai/all
+
+stat/add merit=DEL_Fighting_Style_Qinna
+stat/aspect merit/cost=DEL_Fighting_Style_Qinna/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Qinna/all
+
+stat/add merit=DEL_Fighting_Style_Shurikenjutsu
+stat/aspect merit/cost=DEL_Fighting_Style_Shurikenjutsu/1-4
+stat/aspect merit/access=DEL_Fighting_Style_Shurikenjutsu/all
+
+stat/add merit=DEL_Fighting_Style_Sniping
+stat/aspect merit/cost=DEL_Fighting_Style_Sniping/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Sniping/all
+
+stat/add merit=DEL_Fighting_Style_Social_Maneuvers
+stat/aspect merit/cost=DEL_Fighting_Style_Social_Maneuvers/1-4
+stat/aspect merit/access=DEL_Fighting_Style_Social_Maneuvers/all
+
+stat/add merit=DEL_Fighting_Style_Sojutsu
+stat/aspect merit/cost=DEL_Fighting_Style_Sojutsu/1-4
+stat/aspect merit/access=DEL_Fighting_Style_Sojutsu/all
+
+stat/add merit=DEL_Fighting_Style_Spear_Fighting
+stat/aspect merit/cost=DEL_Fighting_Style_Spear_Fighting/1-4
+stat/aspect merit/access=DEL_Fighting_Style_Spear_Fighting/all
+
+stat/add merit=DEL_Fighting_Style_Spetsnaz_Knife_Fighting
+stat/aspect merit/cost=DEL_Fighting_Style_Spetsnaz_Knife_Fighting/1-4
+stat/aspect merit/access=DEL_Fighting_Style_Spetsnaz_Knife_Fighting/all
+
+stat/add merit=DEL_Fighting_Style_Staff_Fighting
+stat/aspect merit/cost=DEL_Fighting_Style_Staff_Fighting/1-3
+stat/aspect merit/access=DEL_Fighting_Style_Staff_Fighting/all
+
+stat/add merit=DEL_Fighting_Style_Sword_and_Shield
+stat/aspect merit/cost=DEL_Fighting_Style_Sword_and_Shield/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Sword_and_Shield/all
+
+stat/add merit=DEL_Fighting_Style_Two_Weapons
+stat/aspect merit/cost=DEL_Fighting_Style_Two_Weapons/1-5
+stat/aspect merit/access=DEL_Fighting_Style_Two_Weapons/all
+
+stat/add merit=DEL_Ground_and_Pound
+stat/aspect merit/cost=DEL_Ground_and_Pound/2
+stat/aspect merit/access=DEL_Ground_and_Pound/all
+
+stat/add merit=DEL_Weapons_to_Empty_Hands
+stat/aspect merit/cost=DEL_Weapons_to_Empty_Hands/2
+stat/aspect merit/access=DEL_Weapons_to_Empty_Hands/all
+
+stat/add merit=DEL_Student_of_the_Blade
+stat/aspect merit/cost=DEL_Student_of_the_Blade/1
+stat/aspect merit/access=DEL_Student_of_the_Blade/all
+
+stat/add merit=DEL_Entering_Strike
+stat/aspect merit/cost=DEL_Entering_Strike/2
+stat/aspect merit/access=DEL_Entering_Strike/all
+
+stat/add merit=DEL_Gunslinger
+stat/aspect merit/cost=DEL_Gunslinger/3
+stat/aspect merit/access=DEL_Gunslinger/all
+
+stat/add merit=CHNG_Fighting_Style_Grappling
+stat/aspect merit/cost=CHNG_Fighting_Style_Grappling/1-4
+stat/aspect merit/access=CHNG_Fighting_Style_Grappling/all
+
+---
+
+stat/rem merit=Unseen_Sense_(Spirits)
+stat/rem merit=Animal_Finesse
+stat/rem merit=Strong_Lungs
+stat/rem merit=Iron_Stomach
+stat/rem merit=Brawling_Dodge
+stat/rem merit=Weaponry_Dodge
+stat/rem merit=Natural_Immunity
+stat/rem merit=Fighting_Style_Aggressive_Striking
+stat/rem merit=Fighting_Style_Aikido
+stat/rem merit=Fighting_Style_Berserker
+stat/rem merit=Fighting_Style_Boxing
+stat/rem merit=Fighting_Style_Chain_Weapons
+stat/rem merit=Fighting_Style_Combat_Art
+stat/rem merit=Fighting_Style_Combat_Marksmanship
+stat/rem merit=Fighting_Style_Defensive_Striking
+stat/rem merit=Fighting_Style_Evasive_Striking
+stat/rem merit=Fighting_Style_Fencing
+stat/rem merit=Fighting_Style_Filipino_Martial_Art
+stat/rem merit=Fighting_Style_Formation_Tactics
+stat/rem merit=Fighting_Style_Gladiatorial
+stat/rem merit=Fighting_Style_Iaido
+stat/rem merit=Fighting_Style_Judo
+stat/rem merit=Fighting_Style_Jukendo
+stat/rem merit=Fighting_Style_Krav_Maga
+stat/rem merit=Fighting_Style_Kung_Fu
+stat/rem merit=Fighting_Style_Langschwert
+stat/rem merit=Fighting_Style_Mac
+stat/rem merit=Fighting_Style_Muay_Thai
+stat/rem merit=Fighting_Style_Qinna
+stat/rem merit=Fighting_Style_Shurikenjutsu
+stat/rem merit=Fighting_Style_Sniping
+stat/rem merit=Fighting_Style_Social_Maneuvers
+stat/rem merit=Fighting_Style_Sojutsu
+stat/rem merit=Fighting_Style_Spear_Fighting
+stat/rem merit=Fighting_Style_Spetsnaz_Knife_Fighting
+stat/rem merit=Fighting_Style_Staff_Fighting
+stat/rem merit=Fighting_Style_Sword_and_Shield
+stat/rem merit=Fighting_Style_Two_Weapons
+stat/rem merit=Ground_and_Pound
+stat/rem merit=Weapons_to_Empty_Hands
+stat/rem merit=Student_of_the_Blade
+stat/rem merit=Entering_Strike
+stat/rem merit=Gunslinger
+
+---
+
+stat/aspect merit/cost=Area_of_Expertise/1
+stat/aspect merit/cost=Common_Sense/3
+stat/aspect merit/cost=Encyclopedic_Knowledge/2
+stat/aspect merit/cost=Good_Time_Management/1
+stat/aspect merit/cost=Holistic_Awareness/1
+stat/aspect merit/cost=Indomitable/2
+stat/aspect merit/cost=Meditative_Mind/1 2 4
+stat/aspect merit/cost=Multi-Lingual/1
+stat/aspect merit/cost=Unseen_Sense/2
+stat/aspect merit/cost=Barfly/2
+stat/aspect merit/cost=Small_Unit_Tactics/2
+stat/aspect merit/cost=Striking_Looks/1 2
+stat/aspect merit/cost=Giant/3
+
+---
+
+stat/rem merit=Fighting_Style_Adamantine_Hand
+stat/add merit=Adamantine_Hand
+stat/aspect merit/cost=Adamantine_Hand/1-5
+stat/aspect merit/access=Adamantine_Hand/Mage
+
+stat/rem merit=Fighting_Style_Archery
+stat/add merit=Archery
+stat/aspect merit/cost=Archery/1-5
+stat/aspect merit/access=Archery/All
+
+stat/rem merit=Fighting_Style_Armored_Combat
+stat/add merit=Armored_Combat
+stat/aspect merit/cost=Armored_Combat/2 4
+stat/aspect merit/access=Armored_Combat/All
+
+stat/rem merit=Fighting_Style_Dream_Combat
+stat/add merit=Dream_Combat
+stat/aspect merit/cost=Dream_Combat/1-5
+stat/aspect merit/access=Dream_Combat/Changeling
+
+stat/rem merit=Fighting_Style_Fury_Choir
+stat/add merit=Fury_Choir
+stat/aspect merit/cost=Fury_Choir/1-3
+stat/aspect merit/access=Fury_Choir/Werewolf
+
+stat/rem merit=Fighting_Style_Grappling
+stat/add merit=Grappling
+stat/aspect merit/cost=Grappling/3
+stat/aspect merit/access=Grappling/All
+
+stat/rem merit=Fighting_Style_Hedge_Duelist
+stat/add merit=Hedge_Duelist
+stat/aspect merit/cost=Hedge_Duelist/1-5
+stat/aspect merit/access=Hedge_Duelist/Changeling
+
+stat/rem merit=Fighting_Style_Improvised_Weaponry
+stat/add merit=Improvised_Weaponry
+stat/aspect merit/cost=Improvised_Weaponry/1-3
+stat/aspect merit/access=Improvised_Weaponry/All
+
+stat/rem merit=Fighting_Style_Police_Tactics
+stat/add merit=Police_Tactics
+stat/aspect merit/cost=Police_Tactics/1-3
+stat/aspect merit/access=Police_Tactics/All
+
+stat/rem merit=Fighting_Style_Savage_Fury
+stat/add merit=Savage_Fury
+stat/aspect merit/cost=Savage_Fury/1-5
+stat/aspect merit/access=Savage_Fury/Shifter
+
+stat/rem merit=Fighting_Style_Swarm_Tactics
+stat/add merit=Swarm_Tactics
+stat/aspect merit/cost=Swarm_Tactics/1 2
+stat/aspect merit/access=Swarm_Tactics/Vampire
+
+stat/rem merit=Fighting_Style_Tooth_and_Claw
+stat/add merit=Tooth_and_Claw
+stat/aspect merit/cost=Tooth_and_Claw/1-5
+stat/aspect merit/access=Tooth_and_Claw/All
+
+stat/rem merit=Fighting_Style_Wolfpack
+stat/add merit=Wolfpack
+stat/aspect merit/cost=Wolfpack/1-4
+stat/aspect merit/access=Wolfpack/Werewolf
+
+---
+
+stat/aspect merit/cost=Fast_Reflexes/1-3
+
+stat/add merit=Eye_for_the_Strange
+stat/aspect merit/cost=Eye_for_the_Strange/2
+stat/aspect merit/access=Eye_for_the_Strange/All
+
+stat/add merit=Patient
+stat/aspect merit/cost=Patient/1
+stat/aspect merit/access=Patient/All
+
+stat/aspect merit/cost=Anonymity/1-5
+
+stat/add merit=Fast-Talking
+stat/aspect merit/cost=Fast-Talking/1-5
+stat/aspect merit/access=Fast-Talking/All
+
+stat/add merit=Fixer
+stat/aspect merit/cost=Fixer/2
+stat/aspect merit/access=Fixer/All
+
+stat/add merit=Hobbyist_Clique
+stat/aspect merit/cost=Hobbyist_Clique/2
+stat/aspect merit/access=Hobbyist_Clique/All
+
+stat/add merit=Iron_Will
+stat/aspect merit/cost=Iron_Will/2
+stat/aspect merit/access=Iron_Will/All
+
+stat/add merit=Mystery_Cult_Initiation
+stat/aspect merit/cost=Mystery_Cult_Initiation/1-5
+stat/aspect merit/access=Mystery_Cult_Initiation/All
+
+stat/add merit=Pusher
+stat/aspect merit/cost=Pusher/1
+stat/aspect merit/access=Pusher/All
+
+stat/add merit=Safe_Place
+stat/aspect merit/cost=Safe_Place/1-5
+stat/aspect merit/access=Safe_Place/All
+
+stat/add merit=Sympathetic
+stat/aspect merit/cost=Sympathetic/2
+stat/aspect merit/access=Sympathetic/All
+
+stat/add merit=Taste
+stat/aspect merit/cost=Taste/1
+stat/aspect merit/access=Taste/All
+
+stat/add merit=Crack_Driver
+stat/aspect merit/cost=Crack_Driver/2
+stat/aspect merit/access=Crack_Driver/All
+
+stat/add merit=Hardy
+stat/aspect merit/cost=Hardy/1-3
+stat/aspect merit/access=Hardy/All
+
+stat/add merit=Small-Framed
+stat/aspect merit/cost=Small-Framed/2
+stat/aspect merit/access=Small-Framed/All
+
+stat/add merit=Armed_Defense
+stat/aspect merit/cost=Armed_Defense/1-5
+stat/aspect merit/access=Armed_Defense/All
+
+stat/add merit=Cheap_Shot
+stat/aspect merit/cost=Cheap_Shot/2
+stat/aspect merit/access=Cheap_Shot/All
+
+stat/add merit=Choke_Hold
+stat/aspect merit/cost=Choke_Hold/2
+stat/aspect merit/access=Choke_Hold/All
+
+stat/add merit=Close_Quarters_Combat
+stat/aspect merit/cost=Close_Quarters_Combat/1-5
+stat/aspect merit/access=Close_Quarters_Combat/All
+
+stat/add merit=Defensive_Combat
+stat/aspect merit/cost=Defensive_Combat/1
+stat/aspect merit/access=Defensive_Combat/All
+
+stat/add merit=Firefight
+stat/aspect merit/cost=Firefight/1-3
+stat/aspect merit/access=Firefight/All
+
+stat/add merit=Heavy_Weapons
+stat/aspect merit/cost=Heavy_Weapons/1-5
+stat/aspect merit/access=Heavy_Weapons/All
+
+stat/add merit=Iron_Skin
+stat/aspect merit/cost=Iron_Skin/2 4
+stat/aspect merit/access=Iron_Skin/All
+
+stat/add merit=Light_Weapons
+stat/aspect merit/cost=Light_Weapons/1-5
+stat/aspect merit/access=Light_Weapons/All
+
+stat/add merit=Marksmanship
+stat/aspect merit/cost=Marksmanship/1-4
+stat/aspect merit/access=Marksmanship/All
+
+stat/add merit=Martial_Arts
+stat/aspect merit/cost=Martial_Arts/1-5
+stat/aspect merit/access=Martial_Arts/All
+
+stat/add merit=Shiv
+stat/aspect merit/cost=Shiv/1 2
+stat/aspect merit/access=Shiv/All
+
+stat/add merit=Street_Fighting
+stat/aspect merit/cost=Street_Fighting/1-5
+stat/aspect merit/access=Street_Fighting/All
+
+stat/add merit=Unarmed_Defense
+stat/aspect merit/cost=Unarmed_Defense/1-5
+stat/aspect merit/access=Unarmed_Defense/All
+
+stat/add merit=Esoteric_Armory
+stat/aspect merit/cost=Esoteric_Armory/1-5
+stat/aspect merit/access=Esoteric_Armory/All
+
+---
+
+
+
+* MENTAL MERITS
+CHANGE: 
+Area of Expertise :: 2 -> 1
+Common Sense :: 4 -> 3
+Encyclopedic Knowledge :: 4 -> 2
+Good Time Management :: 2 -> 1
+Holistic Awareness :: 3 -> 1
+Indomitable :: 1-5 -> 2
+Meditative Mind :: 1 -> 1, 2, 4
+Multi-Lingual :: 1-5 -> 1 dot, repurchasable
+Unseen Sense :: 3 -> 2
+
+ADD: 
+Fast Reflexes :: 1-2 -> 1-3 (no sheet change, only add)
+Eye For The Strange :: 2
+Patient :: 1
+
+DELETE:
+Unseen Sense (Spirit) :: 1-4
+	
+
+* SOCIAL MERITS
+CHANGE:
+Barfly :: 1 -> 2
+Small Unit Tactics :: 3 -> 2
+Striking Looks :: 2 4 -> 1-2
+	
+ADD:
+Anonymity :: 2-4 -> 1-5 (no sheet change)
+Fast Talking :: 1-5
+Fixer :: 2
+Hobbyist Clique :: 2
+Iron Will :: 2
+Mystery Cult Initiation :: 1-5
+Pusher :: 1
+Safe Place :: 1-5
+Sympathetic :: 2
+Taste :: 1
+
+* PHYSICAL MERITS
+CHANGE: 
+Giant :: 4 -> 3
+
+REMOVE:
+Animal Finesse :: 2
+Strong Lungs :: 3
+Iron Stomach :: 2
+Brawling Dodge :: 1
+Weaponry Dodge :: 1
+Natural Immunity :: 1
+
+ADD: 
+Crack Driver :: 2
+Hardy :: 1-3
+Safe Place :: 1-5
+Small-Framed :: 2
+
+* FIGHTING MERITS
+Remove:
+DEL_Fighting_Style_Aggressive_Striking
+DEL_Fighting_Style_Aikido
+DEL_Fighting_Style_Berserker
+DEL_Fighting_Style_Boxing
+DEL_Fighting_Style_Chain_Weapons
+DEL_Fighting_Style_Combat_Art
+DEL_Fighting_Style_Combat_Marksmanship
+DEL_Fighting_Style_Defensive_Striking
+DEL_Fighting_Style_Evasive_Striking
+DEL_Fighting_Style_Fencing
+DEL_Fighting_Style_Filipino_Martial_Arts
+DEL_Fighting_Style_Formation_Tactics
+DEL_Fighting_Style_Gladiatorial
+DEL_Fighting_Style_Iaido
+DEL_Fighting_Style_Improvised_Weaponry
+DEL_Fighting_Style_Judo
+DEL_Fighting_Style_Jukendo
+DEL_Fighting_Style_Krav_Maga
+DEL_Fighting_Style_Kung_Fu
+DEL_Fighting_Style_Langschwert
+DEL_Fighting_Style_Mac
+DEL_Fighting_Style_Muay_Thai
+DEL_Fighting_Style_Qinna
+DEL_Fighting_Style_Shurikenjutsu
+DEL_Fighting_Style_Sniping
+DEL_Fighting_Style_Social_Maneuvers
+DEL_Fighting_Style_Sojutsu
+DEL_Fighting_Style_Spear_Fighting
+DEL_Fighting_Style_Spetsnaz_Knife_Fighting
+DEL_Fighting_Style_Staff_Fighting
+DEL_Fighting_Style_Sword_and_Shield
+DEL_Fighting_Style_Two_Weapons
+
+DEL_Ground_and_Pound
+DEL_Weapons_to_Empty_Hands
+DEL_Student_of_the_Blade
+DEL_Entering_Strike
+DEL_Gunslinger
+
+
+CHANGES: 
+
+"Fighting Style Grappling" becomes "Grappling"
+
+Grappling (1-4 -> 3)
+	CHNG_Fighting_Style_Grappling
+
+For the following, simply remove 'Fighting_Style' on the sheet/in the system:
+
+Adamantine Hand :: 1-5
+Archery :: 1-5
+Armored Combat :: 2 4
+Dream Combat :: 1-5
+Fury Choir :: 1-3
+Hedge Duelist :: 1-5
+Improvised Weaponry :: 1-3
+Police Tactics :: 1-3
+Savage Fury :: 1-5
+Swarm Tactics :: 1 2
+Tooth and Claw :: 1-5
+Wolfpack :: 1-4
+
+
+ADD:
+Armed Defense :: 1-5
+Cheap Shot :: 2
+Choke Hold :: 2
+Close Quarters Combat :: 1-5
+Defensive Combat :: 1
+Firefight :: 1-3
+Heavy Weapons :: 1-5
+Iron Skin :: 2 4
+Light Weapons :: 1-5
+Marksmanship :: 1-4
+Martial Arts :: 1-5
+Shiv :: 1-2
+Street Fighting :: 1-5
+Unarmed Defense :: 1-5
+
+* OTHER ADDITIONS: 
+Esoteric Armory :: 1-5
+
+---
+
+Certain merits need vetted because the spirit NPCs attached to them need to be re-calculated and re-built.
+
+Baltimore pages: My current list: 
+
+@pemit *baltimore=[header( edit( setr( w, Ghost_Ally ), _, %b ))]%r[iter( search( eplayer=t( match( get( ##/_merits ), %qw~*, | ))), %b [name( %i0 )], , %r)]
+
+@pemit *baltimore=[header( edit( setr( w, Ghost_Familiar ), _, %b ))]%r[iter( search( eplayer=t( match( get( ##/_merits ), %qw~*, | ))), %b [name( %i0 )], , %r)]
+
+@pemit *baltimore=[header( edit( setr( w, Guardian_Ghost ), _, %b ))]%r[iter( search( eplayer=t( match( get( ##/_merits ), %qw~*, | ))), %b [name( %i0 )], , %r)]
+
+@pemit *baltimore=[header( edit( setr( w, Guardian_Spirit ), _, %b ))]%r[iter( search( eplayer=t( match( get( ##/_merits ), %qw~*, | ))), %b [name( %i0 )], , %r)]
+
+@pemit *baltimore=[header( edit( setr( w, Twilight_Demon_Familiar ), _, %b ))]%r[iter( search( eplayer=t( match( get( ##/_merits ), %qw~*, | ))), %b [name( %i0 )], , %r)]
+
+@pemit *baltimore=[header( edit( setr( w, Familiar ), _, %b ))]%r[iter( search( eplayer=t( match( get( ##/_merits ), %qw~*, | ))), %b [name( %i0 )], , %r)]
+
+@pemit *baltimore=footer()
+
+
+
+ 
+
+Ghost Ally
+Ghost Familiar
+Guardian Ghost
+Guardian Spirit
+Twilight Demon Familiar
+Familiar
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+@@ Baltimore forgot these two for deletion: Martial Claws & Disarm
+
+@disable cleaning
+@mark/set type=player
+
+
+@apply_marked &_merits ##=edit( get( ##/_merits ),  Martial_Claws~, DEL_Martial_Claws~, Disarm~, DEL_Disarm~ )
+
+@mark_all/clear
+@enable cleaning
+
+--
+
+stat/add merit=DEL_Martial_Claws
+stat/aspect merit/cost=DEL_Martial_Claws/3 4
+stat/aspect merit/access=DEL_Martial_Claws/all
+
+stat/add merit=DEL_Disarm
+stat/aspect merit/cost=DEL_Disarm/2
+stat/aspect merit/access=DEL_Disarm/all
+
+--
+
+stat/rem merit=Martial_Claws
+stat/rem merit=Disarm
+
+-==--=-=-=-=-=
+
+@@ Baltimore forgot Inspiring changed, too.
+
+@disable cleaning
+@mark/set type=player
+
+@apply_marked &_merits ##=edit( get( ##/_merits ),  Inspiring~, CHNG_Inspiring~ )
+
+@mark_all/clear
+@enable cleaning
+
+--
+
+stat/add merit=CHNG_Inspiring
+stat/aspect merit/cost=CHNG_Inspiring/4
+stat/aspect merit/access=CHNG_Inspiring/all
+
+--
+
+stat/aspect merit/cost=Inspiring/3
+
+-==--=-=-=-=-=-=-=-=
+
+@@ And Toxin Resistance
+
+@disable cleaning
+@mark/set type=player
+
+
+@apply_marked &_merits ##=edit( get( ##/_merits ),  Toxin_Resistance~, DEL_Toxin_Resistance~ )
+
+@mark_all/clear
+@enable cleaning
+
+--
+
+stat/add merit=DEL_Toxin_Resistance
+stat/aspect merit/cost=DEL_Toxin_Resistance/2
+stat/aspect merit/access=DEL_Toxin_Resistance/all
+
+--
+
+stat/rem merit=Toxin_Resistance
+
+-=-=-=-=-=-=-=-=
+
+@@ And Athletics Dodge
+
+@disable cleaning
+@mark/set type=player
+
+@apply_marked &_merits ##=edit( get( ##/_merits ),  Athletics_Dodge~, DEL_Athletics_Dodge~ )
+
+@mark_all/clear
+@enable cleaning
+
+--
+
+stat/add merit=DEL_Athletics_Dodge
+stat/aspect merit/cost=DEL_Athletics_Dodge/1
+stat/aspect merit/access=DEL_Athletics_Dodge/all
+
+--
+
+stat/rem merit=Athletics_Dodge
+
+--=-=-=-=-=-=-=-=--
+
+@@ And Stunt Driver
+
+@disable cleaning
+@mark/set type=player
+
+@apply_marked &_merits ##=edit( get( ##/_merits ),  Stunt_Driver~, DEL_Stunt_Driver~ )
+
+@mark_all/clear
+@enable cleaning
+
+--
+
+stat/add merit=DEL_Stunt_Driver
+stat/aspect merit/cost=DEL_Stunt_Driver/3
+stat/aspect merit/access=DEL_Stunt_Driver/all
+
+stat/rem merit=Stunt_Driver
+
+-=--=-=-=-=-=-=-=-=-=-==-
+
+@@ Request by Damascus (Purified TL) to remove the Locus merit.
+
+@disable cleaning
+@mark/set type=player
+
+@apply_marked &_merits ##=edit( get( ##/_merits ),  Locus~, DEL_Locus~ )
+
+@mark_all/clear
+@enable cleaning
+
+--
+
+stat/add merit=DEL_Locus
+stat/aspect merit/cost=DEL_Locus/1 2 3
+stat/aspect merit/access=DEL_Locus/Purified
+
+stat/rem merit=Locus
+
+
+-=--=-=-=-=-=-=--==--=-=-=-=-==--=-=--=-=-=-=-=--=-=-=
+
+You paged Asgard with ‘See, here's the dillio: Because &_inventory stores the lookup number, the +inventory command is what turns that into 'gun' or 'pickles'. Which means the problem is /probably/ in the lookup, not the storage.’
+You paged Asgard with ‘That is, in the execution of +inv, not in you giving the object.’
+
+--
+
+F.INVENTORY: $+inv*:
+	[switch( 
+		[t( rest( %0, / ))]
+		[t( match( lattr( %!/f.inventory.* ), f.inventory.[edit( first( %0 ), /, )] ))], 
+
+		0*, 
+		u( f.inventory.list, %#, %0 ), 
+
+		10*, err( %#, Could not find that switch. ), 
+
+		11*, u( f.inventory.[edit( first( %0 ), /, )], %#, rest( %0 )), 
+		#-1 State Error Inventory
+	 )]
+
+
+--
+
+F.DISPLAY.INVENTORY: [pemit(%0, [wheader([if(not(strmatch(%0, %1)), [name(%1)]%(%1%)'s%b)]Inventory)]%r[u(f.display.list, Name, Type, Book, Page)]%r[ldivider()])][setq(c, 0)][pemit(%0, [list(u(%1/_EQUIP.INVENTORY), [setq(i, first(%i0, :))][u(f.display.list, u(%va/equip.%qi.name), u(%va/equip.%qi.type), u(%va/equip.%qi.book), u(%va/equip.%qi.page))][setq(c, inc(%qc))], |)][wfooter(%qc item[if(eq(%qc, 1), ,s)])])]
+
