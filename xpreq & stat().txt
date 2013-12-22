@@ -163,7 +163,75 @@ b: xp bucket
 --------------------------------------------------------------------------------
 -- DISPLAY: NORMAL XP SPEND ----------------------------------------------------
 
-&DISPLAY.XP-SPEND.NORMAL XP Request Validation System <xrvs>=%r[ucstr( strcat( setr( e, edit( %1, _, %b )), if( t( %2 ), [if( strmatch( %0, specialty), ., : )][setr( t, edit( %2, _, %b ))] )))] ([lcstr( %0 )])[if( strlen( %6 ), setr( v, %b%5 > %6 ), setr( v, ))]%rXP Cost: %3[if( t( %4 ), %b%(%4%) )][if( t( %7 ), %r--%r%7 )]%r%r[divider(staff commands)]%r%r[strcat(sheet/set %9/%0=, if( cand( eq( %6, 0 ), strlen( %6 )), !), lcstr( %1 ), case( 1, t( %6 ), :%6, cand( eq( %6, 0 ), strlen( %6 )), :%5 ), if( t( %2 ), if( strmatch( %0, specialty ), :%2, /%2)))]%r[strcat(+xp/spend %9=, if( t( %4 ), %4, %3 ), :, if( %8, CHARGEN:%b ), %qe, if( t( %2 ), if( strmatch( %0, specialty ), .%qt, %b(%qt) )), %qv)]%r
+0: trait type (merit, specialty, etc.)
+1: attribtue_name (trait)
+2: instance (french, latin, etc.)
+3: cost (final?)
+4: cost (initial?)
+5: 'from' value
+6: 'to' value
+7: 
+
+--
+
+&DISPLAY.XP-SPEND.NORMAL XP Request Validation System <xrvs>=
+
+@@ >> player portion
+	%r
+	[ucstr( 
+		strcat( 
+			setr( e, edit( %1, _, %b )), 
+			if( t( %2 ), 
+				[if( strmatch( %0, specialty ), ., : )]
+				[setr( t, edit( %2, _, %b ))] 
+			)
+		)
+	)] ([lcstr( %0 )])
+	[if( strlen( %6 ), setr( v, %b%5 > %6 ), setr( v, ))]%r
+
+	XP Cost: %3[if( t( %4 ), %b%(%4%) )]
+	[if( t( %7 ), %r--%r%7 )]%r%r
+
+@@ >> staff portion
+	[divider( staff commands )]%r%r
+
+@@ .. stat-setting
+	[strcat( 
+		sheet/set %9/%0=, 
+		if( cand( eq( %6, 0 ), strlen( %6 )), !), 
+		lcstr( %1 ), 
+		case( 1, 
+			t( %6 ), :%6, 
+			cand( eq( %6, 0 ), strlen( %6 )), :%5 
+		), 
+		if( t( %2 ), 
+			if( strmatch( %0, specialty ), 
+				:%2, 
+				/%2 
+			)
+		), 
+@@ .. .. merits need manually unset, because main stat code
+		if( 
+			cand( strmatch( %0, merit ), gt( %5, 0 ), gt( %6, 0 )), 
+			strcat( 
+				%rsheet/set %9/%0=!, 
+				lcstr( %1 ), 
+				:%5, 
+				if( t( %2 ), /%2 ) 
+			)
+		)
+	)]%r
+
+@@ .. xp-logging
+	[strcat( 
+		+xp/spend %9=, 
+		if( t( %4 ), %4, %3 ), 
+		:, 
+		if( %8, CHARGEN:%b ), 
+		%qe, 
+		if( t( %2 ), if( strmatch( %0, specialty ), .%qt, %b(%qt) )), 
+		%qv 
+	)]%r
 
 
 --------------------------------------------------------------------------------
