@@ -1,0 +1,149 @@
+================================================================================
+== DATA ========================================================================
+
+@@ 0: dbref of target
+@@ 1: from
+@@ 2: to
+
+@@ -- standard
+&xp.attribute #14370=u( f.cost.standard, 5, %1, %2 )
+&xp.skill #14370=u( f.cost.standard, 3, %1, %2 )
+&xp.skill.specialty #14370=2
+&xp.merit #14370=u( f.cost.standard, 2, %1, %2 )
+&xp.morality #14370=u( f.cost.standard, 3, %1, %2 )
+&xp.willpower #14370=8
+&xp.power_trait #14370=u( f.cost.standard, 8, %1, %2 )
+
+@@ -- changeling
+&xp.contract #14370=u( f.cost.standard, 6, %1, %2 )
+&xp.goblin #14370=u( f.cost.simple, 3, %1, %2 )
+&xp.merit.token_limb #14370=u( f.cost.standard, 3, %1, %2 )
+
+@@ -- changing breeds
+&xp.aspect #14370=u( f.cost.standard, 5, %1, %2 )
+&xp.aspect.spirit_gift #14370=ladd( elements( 5 10 15 25 35, lnum( %1, %2 )))
+&xp.favor #14370=u( f.cost.standard, 7, %1, %2 )
+&xp.renown #14370=u( f.cost.standard, case( template( %0 ), shifter, 6, werewolf, 8, 0 ), %1, %2 )
+
+@@ -- cultist
+&xp.cult-rite #14370=u( f.cost.standard, 2, %1, %2 )
+
+@@ -- hunter
+&xp.benediction #14370=u( f.cost.standard, 5, %1, %2 )
+&xp.thaumatechnology #14370=u( f.cost.standard, 2, %1, %2 )
+&xp.ducheval #14370=2
+&xp.armory #14370=u( f.cost.standard, 2, %1, %2 )
+&xp.tactic.whichever #14370=u( f.cost.standard, <cost>, %1, %2 )
+
+@@ -- geist
+&xp.manifestation #14370=u( f.cost.standard, 6, %1, %2 )
+&xp.key #14370=10
+&xp.ceremony #14370=u( f.cost.standard, 8, %1, %2 )
+
+@@ -- mage
+&xp.arcanum #14370=u( f.cost.standard, 8, %1, %2 )
+&xp.rote #14370=u( f.cost.standard, 2, %1, %2 )
+
+@@ -- possessed
+&xp.vice-power #14370=u( f.cost.standard, 10, %1, %2 )
+&xp.vestment #14370=10 (flat?!?1)
+
+@@ -- purified (immortal)
+&xp.chi #14370=u( f.cost.standard, 8, %1, %2 )
+&xp.siddhi #14370=u( f.cost.standard, 7, %1, %2 )
+&xp.numen #14370=10
+
+@@ -- vampire
+&xp.discipline #14370=u( f.cost.standard, case( template( %0 ), vampire, 7, ghoul, 14, 0 ), %1, %2 )
+&xp.theban #14370=u( f.cost.standard, 5, %1, %2 )
+
+@@ -- werewolf
+&xp.gift #14370=u( f.cost.standard, 7, %1, %2 )
+&xp.gift.rituals_1 #14370=5
+&xp.gift.rituals_2 #14370=10
+&xp.gift.rituals_3 #14370=15
+&xp.gift.rituals_4 #14370=20
+&xp.gift.rituals_5 #14370=25
+&xp.rite #14370=u( f.cost.simple, 2, %1, %2 )
+&xp.merit.totem #14370=u( f.cost.simple, 3, %1, %2 )
+
+
+================================================================================
+== COST CALCULATIONS ===========================================================
+
+@@ 0: value
+@@ 1: from (first)
+@@ 2: to (last)
+@@ 'standard' formula is: (( L² - F² + F + L ) / 2 ) * cost
+
+&f.cost.standard #14370=mul( add( power( %2, 2 ), -[power( inc( %1 ), 2 )], inc( %1 ), %2 ), %0, .5 )
+&f.cost.direct #14370=mul( %0, %2 )
+&f.cost.single #14370=mul( %0, sub( %2, %1 ))
+
+
+
+================================================================================
+== NOTES =======================================================================
+
+Other notes, to be dwelled upon.
+
+** Changeling
+Affinity Contract	 New Dots x 4
+Non-Affinity Contract	 New Dots x 6
+
+** Changing Breeds
+
+Breed Favor	 New Dots x 5
+Non-Breed Favor	 New Dots x 7
+
+** The Cult of Things that Must Not Be
+
+Power [2]	 10 (???)
+
+** Hunter
+Elixir	 Dots <-- what?
+Rite of Denial	 5 <-- ???
+Gutter Magic Mystery	8
+Gutter Magic Spell	New Dots x 3
+
+** Geist
+Ceremony (Mentored) [3]	 Dots x 2
+Ceremony (Self-Taught) [3]	 Dots x 3
+
+** Mage
+Ruling Arcanum	 New Dots x 6
+Common Arcanum	 New Dots x 7
+Inferior Arcanum	 New Dots x 8
+Rote [4]	 Dots x 2
+
+** Possessed
+Vestment	 10 <-- Flat?
+
+** Purified
+Chi	 New Dots x 8
+Siddhi	 New Dots x 7
+Numen	 10
+
+** Siten Uzu <-- What?
+Siten Uzu Attribute	New Dots x 3
+Aspect	Dots x 6
+
+** Skinthieves
+Aspect	 New Dots x 5
+
+** Vampire
+Coils, Cruac, Theban [5]	 New Total Dots x 7 <-- Only found 'theban'
+Blood Sorcery Ritual	 Dots x 2 <-- where is this?
+Devotion	 Refer to Devotion <-- this doesn't help!
+Fontal Ritual	 5 <-- where is this?
+Protean 2 & 4 / Web Variant	 3 <-- ?!?!?!?!
+
+** Ghouls
+In-Clan Discipline	 New Dots x 10
+Out-of-Clan Discipline	 New Dots x 14
+
+** Werewolf
+Affinity Gift[6] / Rituals	 New Dots x 5
+Non-Affinity Gift[6]	 New Dots x 7
+Primary Renown	 New Dots x 6
+Other Renown	 New Dots x 8
