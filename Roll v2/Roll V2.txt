@@ -1,0 +1,84 @@
+@	Reach Mux
+@	+Roll system v2
+@	Coded by: Gizmo AKA Ourea, Alzie
+@	Coded for: The Reach Mux
+@	Email: ccubed.techno@gmail.com
+@	Date Last Touched: 1/5/2014
+@----------------------------------------------------------------------------
+@	Purpose: Recode the existing +roll system on the reach in a more
+@	understandable way so that it may be more easily modified later
+@----------------------------------------------------------------------------
+@	Organization
+@	F.* - Function - Player does not interact
+@	CMD.* - Command - Player does interact
+@	LIT.* - Literal - Player sees but does not interact
+@----------------------------------------------------------------------------
+NOTES: /8,/9,/0,/rote,/perm,/weak,/extended (8 again, 9 again, no rerolls, roll failed dice once more, no 10 again and 1's subtract, permanent base stats)
+#3426/FCT.ROLL.GET.DICE,DBREF,STAT NAME,0 or 1 for perm stats,SPEC -> returns STAT NAME/value
+
+@	CMD.ROLL
+@	Usage: +roll list of stats=people or/and here
+@	Returns: Pemits the resulting roll to the room, noted people or sends to a function for mitigating multiple people and the room
+@	General Order: @assert approved, @switch to check for a target - default is the room
+&CMD.ROLL #18850=$+roll *:@assert [isapproved(%#)]=[pemit(%#,[ansi(hr,ERROR)]:%bOnly approved characters can roll.)];@switch [t(after(%0,=))][strmatch(after(%0,=),*here*)]=00,[u(F.SIMPLE.PARSE,[before(%0,=)],[after(%0,=)],-1)],10,[u(F.SIMPLE.PARSE,[before(%0,=)],[after(%0,=)],0)],11,[u(F.SIMPLE.PARSE,[before(%0,=)],[after(%0,=)],1)]
+
+@	F.SIMPLE.PARSE
+@	Usage: Parses a simple roll with no flags, any number of stats and an optional target
+@	%0 - Stats to roll - str+dex-1
+@	%1 - Target(s) - here ourea ashur (can be blank)
+@	%2 - 1 if target includes here, 0 if it doesn't, -1 if there is no target
+@	Returns: Nothing Yet
+@	Passes: %q0, %q1, %q3, %q4 -> F.SIMPLE.ROLL
+@	General Order: First, Check for Negatives. If negatives, replace negatives with %b-. Iterate through items to determine total dice. 
+@	if %q0 <= 0, roll chance. Otherwise, roll %q0 times.	
+@
+@	Registers Used: 
+@		%q0 - Number of Dice to roll
+@		%q1 - Parsed text of the stats (turns str+dex into Strength+Dexterity)
+@		%q2 - Holds the original input with -'s replaced by %b-
+@		%q3 - Holds the Target DBRefs to send a pemit to or 0 for no pemit
+@		%q4 - [where(%#)] or 0 for no remit
+@		%q5 - Temp Var. Holds Stat/# pair.
+&F.SIMPLE.PARSE #18850=[setq(0,0)][if(strmatch(%0,*-*),[setq(2,[edit(%0,-,%b-)])],[setq(2,0)])][if(%q2,[iter(%q2,[if(eq(inum(0),1),[iter(itext(0),[if(isnum(itext(0)),[setq(1,%q1 [itext(0)]%b+)][setq(0,add(%q0,[itext(0)]))],[if(u(isspec,itext(0)),[setq(5,u(F.ROLL.GET.DICE,%#,before(itext(0),.),0,after(itext(0),.)))][setq(1,%q1 [before(%q5,/)]%b+)][setq(0,[add(%q0,[after(%q5,/)])])],[setq(5,[u(F.ROLL.GET.DICE,%#,itext(0))])][setq(1,%q1 [before(%q5,/)]%b+)][setq(0,add(%q0,[after(%q5,/)]))])])],+,@@)],[if(isnum(after(itext(0),-)),[setq(1,%q1 [itext(0)]%b+)][setq(0,sub(%q0,[after(itext(0),-)]))],[if(u(isspec,after(itext(0),-)),[setq(5,[u(F.ROLL.GET.DICE,%#,before(itext(0),.),0,after(itext(0),.))])][setq(1,%q1 [before(%q5,/)]%b+)][setq(0,sub(%q0,[after(%q5,/)]))],[setq(5,[u(F.ROLL.GET.DICE,%#,itext(0))])][setq(1,%q1 [before(%q5,/)]%b+)][setq(0,sub(%q0,after(%q5,/)))])])])], ,@@)],[iter(%0,[if(u(isspec,##),[setq(5,u(F.ROLL.GET.DICE,%#,before(##,.),0,after(##,.)))][setq(1,%q1 [before(%q5,/)]%b+)][setq(0,add(%q0,after(%q5,/)))],[setq(5,u(F.ROLL.GET.DICE,%#,##,0))][setq(1,%q1 [before(%q5,/)]%b+)][setq(0,add(%q0,after(%q5,/)))])],+,@@)])][switch(%2,-1,[setq(3,0)][setq(4,[where(%#)])],0,[iter(%1,[setq(%q3,%q3 [pmatch(##)])], ,@@)][setq(4,0)],1,[iter(setdiff(lcstr(%1),here),[setq(3,%q3 [pmatch(##)])], ,@@)][setq(4,[where(%#)])])][u(F.SIMPLE.ROLL,%q0,[trim([trim(%q1,r,+)])],%q3,%q4)]
+
+@	F.SIMPLE.ROLL
+@	Usage: Takes the results of a simple parse and rolls and outputs the dice
+@	%0 - Dice to roll
+@	%1 - Parsed string of pool input
+@ 	%2 - 0 or List of DBRefs to pemit to
+@ 	#3 - [where(%#)] or 0
+@
+@	Returns: Outputs roll results to targets
+@
+@	General Order: Roll dice. Output header to targets, Output Dice results, Output Footer
+@
+@	Register Used:
+@		%qS - Successes
+@		%qR - Dice String
+@		%qC - Color Dice String
+@		%qZ - Stores 10 again rolls
+&F.SIMPLE.ROLL #18850=[setq(Z,0)][setq(S,0)][iter(lrand(1,10,[if(%0,%0,1)]),[if(eq(##,10),[setq(Z,inc(%qZ))])][if(and(gte(##,8),%0),[setq(S,inc(%qS))][setq(R,%qR%b##)],[setq(R,%qR%b##)])], ,@@)][if(%qZ,[u(F.BONUS.ROLL,%qZ,1)])][setq(R,[sort([stripansi([trim(%qR)])])])][iter(%qR,[if(and(gt(##,7),%0),[setq(C,%qC [ansi(hw,##)])],[if(and(eq(##,10),not(%0)),[setq(C,%qC [ansi(hw,##)])][setq(S,inc(%qS))],[setq(C,%qC [ansi(hx,##)])])])], ,@@)][setq(R,[trim(%qC)])][switch([t(%2)][t(%3)],01,[remit(%3,[u(LIT.HEADER)]%R[space(5)][ljust([if(not(%0),A Chance Die was rolled for)]%b[switch([gte(%qS,5)][gte(%qS,2)][eq(%qS,0)],110,%qS Successes for an Exceptional Success!,010,%qS Successes.,000,%qS Success,001,0 Successes)],73)]%R[space(5)]<%b%qR%b>%R[u(LIT.FOOTER,%1)])],10,[pemit(%2,[u(LIT.HEADER)]%R[space(5)][ljust([if(not(%0),A Chance Die was rolled for)]%b[switch([gte(%qS,5)][gte(%qS,2)][eq(%qS,0)],110,%qS Successes for an Exceptional Success!,010,%qS Successes.,000,%qS Success,001,0 Successes)],73)]%R[space(5)]<%b%qR%b>%R[u(LIT.FOOTER,%1)])],11,[remit(%3,[u(LIT.HEADER)]%R[space(5)][ljust([if(not(%0),A Chance Die was rolled for)]%b[switch([gte(%qS,5)][gte(%qS,2)][eq(%qS,0)],110,%qS Successes for an Exceptional Success!,010,%qS Successes.,000,%qS Success,001,0 Successes)],73)]%R[space(5)]<%b%qR%b>%R[u(LIT.FOOTER,%1)])][pemit(%2,[u(LIT.HEADER)]%R[space(5)][ljust([switch([if(not(%0),A Chance Die was rolled for)]%b[gte(%qS,5)][gte(%qS,2)][eq(%qS,0)],110,%qS Successes for an Exceptional Success!,010,%qS Successes.,000,%qS Success,001,0 Successes)],73)]%R[space(5)]<%b%qR%b>%R[u(LIT.FOOTER,%1)])])]
+
+
+@	F.BONUS.ROLL
+@	Usage: Takes the number of times to reroll and continues to roll until no more tens
+@	%0 - Number of times to roll
+@	%1 - 1 for Chance Die, else 0
+@	Returns: Nothing
+@
+&F.BONUS.ROLL #18850=[setq(Z,0)][iter(lrand(1,10,%0),[if(eq(##,10),[setq(Z,inc(%qZ))])][if(and(gte(##,8),%1),[setq(S,inc(%qS))][setq(R,%qR%b##)],[setq(R,%qR%b##)])], ,@@)][if(%qZ,[u(F.BONUS.ROLL,%qZ,%1)])]
+
+
+@	ISSPEC
+@	Usage: Determines whether or not a given stat is a specialty
+@	%0 - stat to check
+@	Returns: 0 for not a spec, 1 for a spec
+&ISSPEC #18850=[switch(words(%0,.),1,0,2,1)]
+
+@	LIT.HEADER
+@	Header Literal for Roll. Change this to change the roll header
+&LIT.HEADER #18850=[ansi(nr,====)][ljust([ansi(hx,> [ansi(hw,[name(%#)])] <)],74,[ansi(nr,=)])]
+
+@	LIT.FOOTER
+@	Footer Literal for Roll. Change this to change the roll header
+&LIT.FOOTER #18850=[rjust([ansi(hx,> [ansi(hw,%0)] <)],74,[ansi(nr,=)])][ansi(nr,====)]
