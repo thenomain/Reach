@@ -1,4 +1,113 @@
 ================================================================================
+== EXPERIMENTAL COMMAND ========================================================
+
++xpcost <category>/<trait[:instance]> to <value>
+
+0: enactor (%#)
+1: to-value
+3: trait category
+4: stat/trait with underscores
+5: type (instance)
+
+f: full stat name (for partial-name matching)
+u: templates that are allowed access
+i: temp register, via u( f.statget )
+t: type / instance (%5), or replaced via u( f.statget )
+z: player's current value for trait, via u( f.statget )
+v: costs allowed for this trait (not xp costs, but valid levels)
+
+x: estimated xp cost
+
+Currently works only with 'normal' traits, not global nor specialties. 
+
+--
+
+&C.XP-COST.GUESS #14370=
+
+$+xpcost */* to *:
+	think 
+		enactor: [setr( 0, %# )] %r
+		to value: [setr( 1, %2 )] %r
+		trait category: [setr( 3, %0 )] %r
+		instance: [setr( 5, rest( %1, : ))] %r
+		trait with underscores: [setr( 4, edit( before( %1, : ), %b, _ ))] %r
+		full stat: [setr( f, statfull( %q3, %q4 ))]; 
+
+@@ .. validate trait category and trait 
+
+	@assert t( statnum( %q3, %q4 ))={ 
+		@pemit %0=I can't find the [lcstr( %q3 )] '[edit( %q4, _, %b )]'. 
+	}; 
+
+	@assert isrepeat( %q3, %q4 )={ 
+		@pemit %q0=[titlestr( %q3 )]: [mall( %q3, %q4 )] 
+	}; 
+
+	@assert 
+		cor( 
+			match( setr( u, default( #2681/access-%q4, all )), all ), 
+			strmatch( template( %q0 ), %qu )
+		)={ 
+			@pemit %q0=The trait '%qf' is only for the template(s) 
+			[itemize( %qu )]. 
+	}; 
+
+@@ .. get stat's current value
+
+	think 
+		u( f.statget, 
+			if( not( %qf ), global, normal), 
+			%q0, %q3, setr( t, %q5 ), %qf 
+		); 
+	
+	@assert 
+		if( 
+			t( match( v( d.no-value.classes ), %q3 )), 
+			1, 
+			or( 
+				t( match( cat( setr( v, u( f.list.costs, %qf )), 0 ), %q1 )), 
+				cand( strmatch( %qv, ), isint( %q1 ), gte( %q1, 0 ))
+			)
+		)={ 
+			@pemit %q0=
+				if( strmatch( %qv, ), 
+					I was expecting the new value to be a positive integer., 
+					I was expecting a new value of: [itemize( %qv, , or )] 
+				) 
+		}; 
+
+	@assert 
+		if( 
+			t( match( v( d.no-value.classes ), %q3 )), 
+			strmatch( %q1, ), 
+			1 
+		)={ 
+			@pemit %q0=[capstr( %q3 )]s cannot be set to a value. 
+		}; 
+
+	@assert 
+		cor( gt( %q1, %qz ), strmatch( %q1, ))={ 
+			@pemit %q0=The trait's new value of '%q1' must be higher than its 
+			current value of '%qz'. 
+	}; 
+
+@@ .. estimate xp value
+	think cost: 
+		[setr( x, 
+			udefault( xp.[edit( %q3, %b, _ )].%q4, 
+				u( xp.[edit( %q3, %b, _ )], %q0, %qz, %q1 ), 
+				%q0, 
+				%qz, 
+				%q1 
+			)
+		)]; 
+
+	@pemit %q0=Cost: I think getting '%qf[if( t( %q5 ), %b%(%q5%))]' to '%q1' costs '%qx' xp.
+
+
+
+
+================================================================================
 == DATA ========================================================================
 
 @@ 0: dbref of target
@@ -8,20 +117,19 @@
 @@ -- standard
 &xp.attribute #14370=u( f.cost.standard, 5, %1, %2 )
 &xp.skill #14370=u( f.cost.standard, 3, %1, %2 )
-&xp.skill.specialty #14370=2
+&xp.skill.specialty #14370=3
 &xp.merit #14370=u( f.cost.standard, 2, %1, %2 )
 &xp.morality #14370=u( f.cost.standard, 3, %1, %2 )
-&xp.willpower #14370=8
+&xp.willpower #14370=u( f.cost.single, 8, %1, %2 )
 &xp.power_trait #14370=u( f.cost.standard, 8, %1, %2 )
 
 @@ -- changeling
 &xp.contract #14370=u( f.cost.standard, 6, %1, %2 )
-&xp.goblin #14370=u( f.cost.simple, 3, %1, %2 )
+&xp.goblin #14370=u( f.cost.direct, 3, %1, %2 )
 &xp.merit.token_limb #14370=u( f.cost.standard, 3, %1, %2 )
 
 @@ -- changing breeds
 &xp.aspect #14370=u( f.cost.standard, 5, %1, %2 )
-&xp.aspect.spirit_gift #14370=ladd( elements( 5 10 15 25 35, lnum( %1, %2 )))
 &xp.favor #14370=u( f.cost.standard, 7, %1, %2 )
 &xp.renown #14370=u( f.cost.standard, case( template( %0 ), shifter, 6, werewolf, 8, 0 ), %1, %2 )
 
@@ -29,7 +137,8 @@
 &xp.cult-rite #14370=u( f.cost.standard, 2, %1, %2 )
 
 @@ -- hunter
-&xp.benediction #14370=u( f.cost.standard, 5, %1, %2 )
+&xp.benediction #14370=5
+&xp.elixir #14370=u( f.cost.single, 1, %1, %2 )
 &xp.thaumatechnology #14370=u( f.cost.standard, 2, %1, %2 )
 &xp.ducheval #14370=2
 &xp.armory #14370=u( f.cost.standard, 2, %1, %2 )
@@ -46,7 +155,7 @@
 
 @@ -- possessed
 &xp.vice-power #14370=u( f.cost.standard, 10, %1, %2 )
-&xp.vestment #14370=10 (flat?!?1)
+&xp.vestment #14370=10
 
 @@ -- purified (immortal)
 &xp.chi #14370=u( f.cost.standard, 8, %1, %2 )
@@ -55,17 +164,28 @@
 
 @@ -- vampire
 &xp.discipline #14370=u( f.cost.standard, case( template( %0 ), vampire, 7, ghoul, 14, 0 ), %1, %2 )
-&xp.theban #14370=u( f.cost.standard, 5, %1, %2 )
+&xp.discipline.cruac #14370=u( f.cost.standard, 7, %1, %2 )
+&xp.discipline.coil_of_banes #14370=u( f.cost.standard, 8, %1, %2 )
+&xp.discipline.coil_of_blood #14370=u( f.cost.standard, 8, %1, %2 )
+&xp.discipline.coil_of_flesh #14370=u( f.cost.standard, 8, %1, %2 )
+&xp.discipline.coil_of_the_beast #14370=u( f.cost.standard, 8, %1, %2 )
+&xp.discipline.coil_of_the_soul #14370=u( f.cost.standard, 8, %1, %2 )
+
+&xp.theban #14370=u( f.cost.single, 2, %1, %2 )
+&xp.ritual #14370=u( f.cost.single, 2, %1, %2 )
+
 
 @@ -- werewolf
-&xp.gift #14370=u( f.cost.standard, 7, %1, %2 )
+&xp.gift #14370=case( template( %0 ), werewolf, u( f.cost.standard, 7, %1, %2 ), shifter, u( f.cost.direct, 5, %1, add( %2, max( 0, sub( %2, 3 )))), 0 )
+
 &xp.gift.rituals_1 #14370=5
 &xp.gift.rituals_2 #14370=10
 &xp.gift.rituals_3 #14370=15
 &xp.gift.rituals_4 #14370=20
 &xp.gift.rituals_5 #14370=25
-&xp.rite #14370=u( f.cost.simple, 2, %1, %2 )
-&xp.merit.totem #14370=u( f.cost.simple, 3, %1, %2 )
+
+&xp.rite #14370=u( f.cost.direct, 2, %1, %2 )
+&xp.merit.totem #14370=u( f.cost.single, 3, %1, %2 )
 
 
 ================================================================================
@@ -74,12 +194,18 @@
 @@ 0: value
 @@ 1: from (first)
 @@ 2: to (last)
-@@ 'standard' formula is: (( L² - F² + F + L ) / 2 ) * cost
+@@ Numbers from 'first' to 'last' is: ( L² - F² + F + L ) / 2 
+@@ We '++from' because we want all the numbers it's raised /past/ 'from'.
+@@ So: (( L² - ++F² + ++F + L ) / 2 ) * cost
+@@ We '* cost * .5' to make sure it's still integer before it's floating.
 
 &f.cost.standard #14370=mul( add( power( %2, 2 ), -[power( inc( %1 ), 2 )], inc( %1 ), %2 ), %0, .5 )
-&f.cost.direct #14370=mul( %0, %2 )
-&f.cost.single #14370=mul( %0, sub( %2, %1 ))
 
+@@ Do not pass Go
+&f.cost.direct #14370=mul( %0, %2 )
+
+@@ cost * levels bought
+&f.cost.single #14370=mul( %0, sub( %2, %1 ))
 
 
 ================================================================================
@@ -98,7 +224,7 @@ Non-Breed Favor	 New Dots x 7
 
 ** The Cult of Things that Must Not Be
 
-Power [2]	 10 (???)
+Power [2]	 10 <-- Not in the system; +noted only
 
 ** Hunter
 Elixir	 Dots <-- what?
@@ -114,17 +240,14 @@ Ceremony (Self-Taught) [3]	 Dots x 3
 Ruling Arcanum	 New Dots x 6
 Common Arcanum	 New Dots x 7
 Inferior Arcanum	 New Dots x 8
-Rote [4]	 Dots x 2
 
 ** Possessed
-Vestment	 10 <-- Flat?
+Vestment	 10 <-- Flat? Yes: rating is minimum 'vice' required
 
 ** Purified
 Chi	 New Dots x 8
-Siddhi	 New Dots x 7
-Numen	 10
 
-** Siten Uzu <-- What?
+** Siten Uzu <-- Skinchangers, fox spirits co-habitating bodies
 Siten Uzu Attribute	New Dots x 3
 Aspect	Dots x 6
 
@@ -132,7 +255,7 @@ Aspect	Dots x 6
 Aspect	 New Dots x 5
 
 ** Vampire
-Coils, Cruac, Theban [5]	 New Total Dots x 7 <-- Only found 'theban'
+Coils, Cruac, Theban [5]	 New Total Dots x 7
 Blood Sorcery Ritual	 Dots x 2 <-- where is this?
 Devotion	 Refer to Devotion <-- this doesn't help!
 Fontal Ritual	 5 <-- where is this?
