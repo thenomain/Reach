@@ -243,8 +243,11 @@ b: xp bucket
 --------------------------------------------------------------------------------
 -- GET CURRENT STAT: NORMAL ----------------------------------------------------
 
+@@ qf: Attribute name from further up the chain -- critical!
+
 &F.STATGET.NORMAL XP Request Validation System <xrvs>=
-	result from stat(): [setr( i, stat( %0, %4[if( t( %2 ), ::%2 )] ))]
+	result from stat(): [setr( i, stat( %0, %qf[if( t( %2 ), ::%2 )] ))]
+
 
 --------------------------------------------------------------------------------
 -- GET CURRENT STAT: GLOBAL ----------------------------------------------------
@@ -335,7 +338,19 @@ z: player's current value
 --------------------------------------------------------------------------------
 -- XP COSTS FOR VARIOUS THINGS -------------------------------------------------
 
-&F.LIST.COSTS XP Request Validation System <xrvs>=localize( case( 1, isint( setr( i, get( #2672/COST-%0 ))), %qi, strmatch( %qi, ?-* ), lnum( before( %qi, - ), after( %qi, - )), %qi ))
+@@ by 'costs' we mean values that you can set it to, not xp costs
+
+&F.LIST.COSTS XP Request Validation System <xrvs>=localize( 
+	case( 1, 
+		isint( setr( i, get( #2672/COST-%0 ))), 
+		%qi, 
+
+		strmatch( %qi, ?-* ), 
+		lnum( before( %qi, - ), after( %qi, - )), 
+
+		%qi 
+	)
+)
 
 
 --------------------------------------------------------------------------------
