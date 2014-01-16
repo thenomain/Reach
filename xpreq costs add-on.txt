@@ -36,7 +36,7 @@ $+xpcost */* to *:
 @@ .. validate trait category and trait 
 
 	@assert t( statnum( %q3, %q4 ))={ 
-		@pemit %0=I can't find the [lcstr( %q3 )] '[edit( %q4, _, %b )]'. 
+		@pemit %q0=I can't find the [lcstr( %q3 )] '[edit( %q4, _, %b )]'. 
 	}; 
 
 	@assert isrepeat( %q3, %q4 )={ 
@@ -131,7 +131,7 @@ $+xpcost */* to *:
 @@ -- changing breeds
 &xp.aspect #14370=u( f.cost.standard, 5, %1, %2 )
 &xp.favor #14370=u( f.cost.standard, 7, %1, %2 )
-&xp.renown #14370=u( f.cost.standard, case( template( %0 ), shifter, 6, werewolf, 8, 0 ), %1, %2 )
+&xp.renown #14370=u( f.cost.standard, case( template( %0 ), Shifter, 6, Werewolf, 8, 0 ), %1, %2 )
 
 @@ -- cultist
 &xp.cult-rite #14370=u( f.cost.standard, 2, %1, %2 )
@@ -163,7 +163,7 @@ $+xpcost */* to *:
 &xp.numen #14370=10
 
 @@ -- vampire
-&xp.discipline #14370=u( f.cost.standard, case( template( %0 ), vampire, 7, ghoul, 14, 0 ), %1, %2 )
+&xp.discipline #14370=u( f.cost.standard, case( template( %0 ), Vampire, 7, Ghoul, 14, 0 ), %1, %2 )
 &xp.discipline.cruac #14370=u( f.cost.standard, 7, %1, %2 )
 &xp.discipline.coil_of_banes #14370=u( f.cost.standard, 8, %1, %2 )
 &xp.discipline.coil_of_blood #14370=u( f.cost.standard, 8, %1, %2 )
@@ -176,7 +176,7 @@ $+xpcost */* to *:
 
 
 @@ -- werewolf
-&xp.gift #14370=case( template( %0 ), werewolf, u( f.cost.standard, 7, %1, %2 ), shifter, u( f.cost.direct, 5, %1, add( %2, max( 0, sub( %2, 3 )))), 0 )
+&xp.gift #14370=case( template( %0 ), Werewolf, u( f.cost.standard, 7, %1, %2 ), Shifter, u( f.cost.direct, 5, %1, add( %2, max( 0, sub( %2, 3 )))), 0 )
 
 &xp.gift.rituals_1 #14370=5
 &xp.gift.rituals_2 #14370=10
