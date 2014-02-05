@@ -182,7 +182,7 @@
 @		%q9 - Parsed text of the stats (turns str+dex into Strength+Dexterity)
 @		%q2 - Holds the original input spaced out for parsing
 @		%q5 - Temp Var. Holds Stat/# pair.
-&PARSE.GETDICE #18850=[setq(0,0)][setq(9,[space(0)])][setq(2,[edit(%0,-,%b-,+,%b+)])][iter(%q2,[switch([u(F.POSNEG,%i0)],1,[if(after(%i0,+),[if(isnum(after(%i0,+)),[setq(0,[add(%q0,[after(%i0,+)])])][setq(9,%q9+ [after(%i0,+)]%b)],[setq(0,[add(%q0,[after([setr(5,[u(PARSE.STAT,after(%i0,+),%qJ)])],/)])])][setq(9,%q9+ [before(%q5,/)]%b)])],[if(isnum(%i0),[setq(0,add(%q0,%i0))][setq(9,%q9+ %i0%b)],[setq(0,[add(%q0,[after([setr(5,[u(PARSE.STAT,%i0,%qJ)])],/)])])][setq(9,%q9+ [before(%q5,/)]%b)])])],0,[if(isnum(after(%i0,-)),[setq(0,sub(%q0,after(%i0,-)))][setq(9,%q9- [after(%i0,-)]%b)],[setq(0,[sub(%q0,[after([setr(5,[u(PARSE.STAT,after(%i0,-),%qJ)])],/)])][setq(9,%q9- [before(%q5,/)]%b)])])])], ,@@)]
+&PARSE.GETDICE #18850=[setq(0,0)][setq(9,[space(0)])][setq(2,[edit([edit(%0,%b,)],-,%b-,+,%b+)])][iter(%q2,[switch([u(F.POSNEG,%i0)],1,[if(after(%i0,+),[if(isnum(after(%i0,+)),[setq(0,[add(%q0,[after(%i0,+)])])][setq(9,%q9+ [after(%i0,+)]%b)],[setq(0,[add(%q0,[after([setr(5,[u(PARSE.STAT,after(%i0,+),%qJ)])],/)])])][setq(9,%q9+ [before(%q5,/)]%b)])],[if(isnum(%i0),[setq(0,add(%q0,%i0))][setq(9,%q9+ %i0%b)],[setq(0,[add(%q0,[after([setr(5,[u(PARSE.STAT,%i0,%qJ)])],/)])])][setq(9,%q9+ [before(%q5,/)]%b)])])],0,[if(isnum(after(%i0,-)),[setq(0,sub(%q0,after(%i0,-)))][setq(9,%q9- [after(%i0,-)]%b)],[setq(0,[sub(%q0,[after([setr(5,[u(PARSE.STAT,after(%i0,-),%qJ)])],/)])][setq(9,%q9- [before(%q5,/)]%b)])])])], ,@@)]
 
 @	F.POSNEG
 @	Usage: Takes an input and returns whether that is positive or negative
