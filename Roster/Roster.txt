@@ -1,0 +1,148 @@
+@	Reach Mux
+@	Sphere Roster System
+@	Coded by: Gizmo AKA Ourea, Alzie
+@	Coded for: The Reach Mux
+@	Email: ccubed.techno@gmail.com
+@	Date Last Touched: 2/9/2014
+@----------------------------------------------------------------------------
+@	Purpose: Code a way for TLs and Admin to track their spheres
+@----------------------------------------------------------------------------
+@	Organization
+@	DATA.SPLAT.* - Templates associated with the sphere *
+@	DATA.PLAYERS.* - Where the dialy stores the active players of sphere *
+@	DAILY.* - Daily for each sphere
+@	DATA.ACCESS.TL.* - Stores TL for each sphere
+@	CMD.* - Command - Player does interact
+@	LIT.* - Literal - Player sees but does not interact
+@	F.PARSE.* - Parser - Player does not interact
+@	F.DISP.* - Display Formatter - Player sees but does not interact
+@	F.FORMAT.* - Data Formatter - Player does not interact
+@----------------------------------------------------------------------------
+
+&DATA.SPLAT.IMMORTAL Roster Command Object=Blood_Bather Body_Thief Eternal Patchwork_People Purified Reborn Warden
+&DATA.SPLAT.CHANGELING Roster Command Object=Changeling FaeTouched
+&DATA.SPLAT.MAGE Roster Command Object=Mage Sleepwalker Proximus
+&DATA.SPLAT.HUNTER Roster Command Object=Hunter
+&DATA.SPLAT.MORTAL Roster Command Object=Mortal Psychic Thaumaturge
+&DATA.SPLAT.WEREWOLF Roster Command Object=Werewolf Wolfblooded
+&DATA.SPLAT.VAMPIRE Roster Command Object=Vampire Ghoul
+&DATA.SPLAT.FERAL Roster Command Object=Shifter Beastkin
+&DATA.SPLAT.GEIST Roster Command Object=Geist
+&DATA.SPLAT.POSSESSED Roster Command Object=Possessed
+&DAILY.IMMORTAL Roster Command Object=[set(me,DATA.PLAYERS.IMMORTAL:[search(eplayer=and(isapproved(##),match(xget(me,DATA.SPLAT.IMMORTAL),xget(##,_Template)),not(orflags(##,W Z w 1))))])]
+&DAILY.CHANGELING Roster Command Object=[set(me,DATA.PLAYERS.CHANGELING:[search(eplayer=and(isapproved(##),match(xget(me,DATA.SPLAT.CHANGELING),xget(##,_Template)),not(orflags(##,W Z w 1))))])]
+&DAILY.MAGE Roster Command Object=[set(me,DATA.PLAYERS.MAGE:[search(eplayer=and(isapproved(##),match(xget(me,DATA.SPLAT.MAGE),xget(##,_Template)),not(orflags(##,W Z w 1))))])]
+&DAILY.HUNTER Roster Command Object=[set(me,DATA.PLAYERS.HUNTER:[search(eplayer=and(isapproved(##),match(xget(me,DATA.SPLAT.HUNTER),xget(##,_Template)),not(orflags(##,W Z w 1))))])]
+&DAILY.MORTAL Roster Command Object=[set(me,DATA.PLAYERS.MORTAL:[search(eplayer=and(isapproved(##),match(xget(me,DATA.SPLAT.MORTAL),xget(##,_Template)),not(orflags(##,W Z w 1))))])]
+&DAILY.WEREWOLF Roster Command Object=[set(me,DATA.PLAYERS.WEREWOLF:[search(eplayer=and(isapproved(##),match(xget(me,DATA.SPLAT.WEREWOLF),xget(##,_Template)),not(orflags(##,W Z w 1))))])]
+&DAILY.VAMPIRE Roster Command Object=[set(me,DATA.PLAYERS.VAMPIRE:[search(eplayer=and(isapproved(##),match(xget(me,DATA.SPLAT.VAMPIRE),xget(##,_Template)),not(orflags(##,W Z w 1))))])]
+&DAILY.FERAL Roster Command Object=[set(me,DATA.PLAYERS.FERAL:[search(eplayer=and(isapproved(##),match(xget(me,DATA.SPLAT.FERAL),xget(##,_Template)),not(orflags(##,W Z w 1))))])]
+&DAILY.GEIST Roster Command Object=[set(me,DATA.PLAYERS.GEIST:[search(eplayer=and(isapproved(##),match(xget(me,DATA.SPLAT.GEIST),xget(##,_Template)),not(orflags(##,W Z w 1))))])]
+&DAILY.POSSESSED Roster Command Object=[set(me,DATA.PLAYERS.POSSESSED:[search(eplayer=and(isapproved(##),match(xget(me,DATA.SPLAT.POSSESSED),xget(##,_Template)),not(orflags(##,W Z w 1))))])]
+&DATA.DEPARTMENTS Roster Command Object=IMMORTAL HUNTER MORTAL WEREWOLF VAMPIRE MAGE FERAL POSSESSED CHANGELING GEIST
+&CMD.ROSTER Roster Command Object=$+roster:@assert [orflags(%#,W Z w)]=[pemit(%#,Huh? \(Type "Help" for Help.\))];@switch [words([setr(0,[u(F.DETERMINE.SPLAT,%#)])])]=0,[pemit(%#,[ansi(hr,ERROR:)]%bNo Department found for you. Please contact staff.)],1,[pemit(%#,[u(F.DISP.[trim(%q0)])])],2,[if(hasattr(%#,ROSTER.SPHERE.DEFAULT),[pemit(%#,[u(F.DISP.[xget(%#,ROSTER.SPHERE.DEFAULT)],%#)])],[pemit(%#,[ansi(hr,ERROR:)]%bYou were found listed under more than one sphere. Please use +roster <sphere> to specify which one you want or set a default sphere with +roster/default <sphere>.)])]
+&F.DETERMINE.SPLAT Roster Command Object=[iter(xget(me,DATA.DEPARTMENTS),[if(match([xget(#99,V_DEPT_##)],%0),##%b)], ,@@)]
+&F.DISP.SPHERE Roster Command Object=[u(LIT.HEADER,%1)]%R[iter(xget(me,DATA.PLAYERS.%1),[ljust(name(##),78)]%R, ,@@)][u(LIT.FOOTER)]
+&LIT.HEADER Roster Command Object=[center([ansi(hx,>[ansi(hw,Sphere Roster for %0)]<)],78,[ansi(nr,=)])]%R[ljust([ansi(hw,NAME)],25)][ljust([ansi(hw,%1)],%2)][if(%3,[ljust([ansi(hw,%3)],%4)])][if(%5,[ljust([ansi(hw,%5)],%6)])]%R[ansi(nr,[repeat(=,78)])]
+&LIT.FOOTER Roster Command Object=[center([ansi(hx,>[ansi(hw,%0 Players Listed)]<)],78,[ansi(nr,=)])]
+&F.DISP.IMMORTAL Roster Command Object=[u(LIT.HEADER,Immortal,Type,25,Chi,25)]%R[iter(sortby(SORT.ALPHA,xget(me,DATA.PLAYERS.IMMORTAL)),[ljust(name(##),25)][ljust([edit([xget(##,_Template)],_,%b)],25)][if(match(xget(##,_Template),Purified),[ljust(xget(##,_Chi),25)])]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.IMMORTAL))])]
+&CMD.ROSTER.SPHERE Roster Command Object=$+roster *:@assert [orflags(%#,W Z w)]=[pemit(%#,Huh? \(Type "Help" for Help.\))];@assert [match([xget(me,DATA.DEPARTMENTS)],%0)]=[pemit(%#,[ansi(hr,ERROR:)]%bCan't find that splat.)];@assert [or([match([u(F.DETERMINE.SPLAT,%#)],%0)],[hasflag(%#,W)],[match([xget(me,DATA.ACCESS.%0)],%#)])]=[pemit(%#,[ansi(hr,ERROR:)]%bYou don't have access to that sphere's roster.)];@pemit %#=[u(F.DISP.%0)]
+&SORT.ALPHA Roster Command Object=[comp(name(%0),name(%1))]
+&SORT.TEMPLATE Roster Command Object=[comp([xget(%0,_Template)],[xget(%1,_Template)])]
+&F.DISP.HUNTER Roster Command Object=[u(LIT.HEADER,Hunter,Conspiracy,25)]%R[iter(sortby(SORT.ALPHA,xget(me,DATA.PLAYERS.HUNTER)),[ljust(name(##),25)][ljust([edit([xget(##,_Conspiracy)],_,%b)],25)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.HUNTER))])]
+&F.DISP.WEREWOLF Roster Command Object=[u(LIT.HEADER,Werewolf,Auspice,15,Tribe,20,Primal Urge,18)]%R[iter(sortby(SORT.ALPHA,xget(me,DATA.PLAYERS.WEREWOLF)),[ljust(name(##),25)][if(match(xget(##,_Template),Werewolf),[ljust([xget(##,_Auspice)],15)][ljust(edit([xget(##,_Tribe)],_,%b),20)][ljust([xget(##,_Primal-Urge)],18)]%R,[ljust(Wolfblooded,53)]%R)], ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.WEREWOLF))])]
+&F.DISP.VAMPIRE Roster Command Object=[u(LIT.HEADER,Vampire,Clan,12,Covenant,25,Blood Potency,16)]%R[iter(sortby(SORT.ALPHA,xget(me,DATA.PLAYERS.VAMPIRE)),[ljust(name(##),25)][if(match(xget(##,_Template),Vampire),[ljust(xget(##,_Clan),12)][ljust(edit(xget(##,_Covenant),_,%b),25)][ljust(xget(##,_Blood-Potency),16)]%R,[ljust(Ghoul,53)]%R)], ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.VAMPIRE))])]
+&F.DISP.MAGE Roster Command Object=[u(LIT.HEADER,Mage,Path,10,Order,25,Gnosis,18)]%R[iter(sortby(SORT.ALPHA,xget(me,DATA.PLAYERS.MAGE)),[ljust(name(##),25)][switch(xget(##,_Template),Proximus,[ljust(Proximus,10)][ljust(edit(xget(##,_Order),_,%b),25)],Mage,[ljust(xget(##,_Path),10)][ljust(edit(xget(##,_Order),_,%b),25)][ljust(xget(##,_Gnosis),18)],Sleepwalker,[ljust(Sleepwalker,53)])]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.MAGE))])]
+&F.DISP.FERAL Roster Command Object=[u(LIT.HEADER,Feral,Breed,20,Species,15,Feral Heart,18)]%R[iter(sortby(SORT.ALPHA,xget(me,DATA.PLAYERS.FERAL)),[if(match(xget(##,_Template),Beastkin),[ljust(name(##),25)][ljust(Beastkin,53)]%R,[ljust(name(##),25)][ljust(edit(xget(##,_Breed),_,%b),20)][ljust(before(xget(##,_Species),:),15)][ljust(xget(##,_Feral-Heart),18)]%R)], ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.FERAL))])]
+&F.DISP.POSSESSED Roster Command Object=[u(LIT.HEADER,Possessed,Vice,10,Clutch,28,Infernal Will,15)]%R[iter(sortby(SORT.ALPHA,xget(me,DATA.PLAYERS.POSSESSED)),[ljust(name(##),25)][ljust(xget(##,_PRIMARY-VICE),10)][ljust(xget(##,_Clutch),28)][ljust(xget(##,_Infernalwill),15)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.POSSESSED))])]
+&F.DISP.CHANGELING Roster Command Object=[u(LIT.HEADER,Changeling,Seeming,12,Kith,25,Wyrd,16)]%R[iter(sortby(SORT.ALPHA,xget(me,DATA.PLAYERS.CHANGELING)),[if(match(xget(##,_Template),FaeTouched),[ljust(name(##),25)][ljust(Fae Touched,53)],[ljust(name(##),25)][ljust(xget(##,_Seeming),12)][ljust(xget(##,_Kith),25)][ljust(xget(##,_Wyrd),16)])]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.CHANGELING))])]
+&CMD.ROSTER.SWITCH Roster Command Object=$+roster/* *:@assert [orflags(%#,W Z w)]=[pemit(%#,Huh? \(Type "Help" for Help.\))];@switch [match(TL DEFAULT ACCESS SORT FILTER,%0)]=1,[pemit(%#,u(F.ROSTER.SWITCH.TL,%1))],2,[pemit(%#,[u(F.ROSTER.SWITCH.DEFAULT,%1)])],3,[pemit(%#,[u(F.ROSTER.SWITCH.ACCESS,%1)])],4,[pemit(%#,[u(F.ROSTER.SWITCH.SORT,%1)])],5,[pemit(%#,[u(F.ROSTER.SWITCH.FILTER,%1)])]
+&F.ROSTER.SWITCH.TL Roster Command Object=[if(hasflag(%#,W),[if([pmatch(after(%0,=))],[if(match(xget(me,DATA.DEPARTMENTS),before(%0,=)),[set(me,DATA.ACCESS.TL.[before(%0,=)]:[pmatch(after(%0,=))])][pemit(%#,[ansi(hw,ROSTER:)]%bAdded [after(%0,=)] as TL for [before(%0,=)] Sphere.)],[ansi(hr,ERROR:)]%bI can't find that splat.)],[ansi(hr,ERROR:)]%bCan't find [after(%0,=)])],[ansi(hr,ERROR:)]%bThis command is restricted to wizards only.)]
+&F.ROSTER.SWITCH.DEFAULT Roster Command Object=[if(match(xget(me,DATA.DEPARTMENTS),%0),[set(%#,ROSTER.SPHERE.DEFAULT:%0)][ansi(hw,ROSTER:)]%bDefault Sphere set to %0.,[ansi(hr,ERROR:)]%bCouldn't find that sphere.)]
+&F.ROSTER.SWITCH.ACCESS Roster Command Object=[if(match(xget(me,DATA.DEPARTMENTS),[before(%0,=)]),[if(or(hasflag(%#,W),match(xget(me,DATA.ACCESS.TL.[before(%0,=)]),%#)),[setq(0,)][setq(1,)][iter([after(%0,=)],[if(match(mid(##,0,1),!),[if(words(%q0),[setq(0,%q0 [pmatch(after(##,!))])],[setq(0,[pmatch(after(##,!))])])],[if(words(%q1),[setq(1,%q1 [pmatch(##)])],[setq(1,[pmatch(##)])])])], ,@@)][setq(1,[setunion(%q1,[xget(me,DATA.ACCESS.[before(%0,=)])])])][set(me,DATA.ACCESS.[before(%0,=)]:[setdiff(%q1,%q0)])][ansi(hw,ROSTER:)]%bProcessed [after(%0,=)] for sphere [before(%0,=)].,[ansi(hr,ERROR:)]%bYou don't have the authority to set access rights for that sphere.)],[ansi(hr,ERROR:)]%bCan't find that sphere.)]
+&F.DISP.MORTAL Roster Command Object=[u(LIT.HEADER,Mortal,Template,53)]%R[iter(sortby(SORT.ALPHA,xget(me,DATA.PLAYERS.MORTAL)),[ljust(name(##),25)][ljust(xget(##,_Template),53)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.MORTAL))])]
+&F.ROSTER.SWITCH.SORT Roster Command Object=[if(words(after(%0,=)),[if([or([match([u(F.DETERMINE.SPLAT,%#)],%0)],[hasflag(%#,W)],[match([xget(me,DATA.ACCESS.%0)],%#)])],[u(F.DISP.SORT,%#,[after(%0,=)],[before(%0,=)])],[ansi(hr,ERROR:)]%bYou don't have access to that sphere's roster.)],[switch(words(setr(0,u(F.DETERMINE.SPLAT,%#))),0,[ansi(hr,ERROR:)]%bNo Department found for you. Please contact staff.,1,[u(F.DISP.SORT,%#,%q0,%0)],2,[if(hasattr(%#,ROSTER.SPHERE.DEFAULT),[pemit(%#,[u(F.DISP.SORT,%#,[xget(%#,ROSTER.SPHERE.DEFAULT)],%0)])],[pemit(%#,[ansi(hr,ERROR:)]%bYou were found listed under more than one sphere. Please use +roster <sphere> to specify which one you want or set a default sphere with +roster/default <sphere>.)])])])]
+&DATA.SORTS.MORTAL Roster Command Object=Alpha Template
+&DATA.SORTS.HUNTER Roster Command Object=Alpha Conspiracy
+&DATA.SORTS.IMMORTAL Roster Command Object=Alpha Template PowerA PowerD
+&DATA.SORTS.CHANGELING Roster Command Object=Alpha Template Kith Seeming PowerA PowerD
+&DATA.SORTS.VAMPIRE Roster Command Object=Alpha Template Clan Covenant PowerA PowerD
+&DATA.SORTS.WEREWOLF Roster Command Object=Alpha Template Auspice Tribe PowerA PowerD
+&DATA.SORTS.MAGE Roster Command Object=Alpha Template Order Path PowerA PowerD
+&DATA.SORTS.FERAL Roster Command Object=Alpha Template Species Breed PowerA PowerD
+&DATA.SORTS.POSSESSED Roster Command Object=Alpha Clutch Vice
+&SORT.CONSPIRACY Roster Command Object=[comp([xget(%0,_Conspiracy)],[xget(%1,_Conspiracy)])]
+&F.DISP.SORTS.HUNTER Roster Command Object=[u(LIT.HEADER,Hunter,Conspiracy,25)]%R[iter(sortby(SORT.[eval(%0)],xget(me,DATA.PLAYERS.HUNTER)),[ljust(name(##),25)][ljust([edit([xget(##,_Conspiracy)],_,%b)],25)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.HUNTER))])]
+&F.DISP.SORT Roster Command Object=[if(match(xget(me,DATA.SORTS.[eval(%1)]),%2),[u(F.DISP.SORTS.[eval(%1)],%2)],[ansi(hr,ERROR:)]%bThe sort method provided is not applicable to the sphere you selected)]
+&F.DISP.SORTS.WEREWOLF Roster Command Object=[setq(0,[search(eplayer=and(match(xget(##,_Template),Wolfblooded),isapproved(##)))])][setq(1,[setdiff([xget(me,DATA.PLAYERS.WEREWOLF)],%q0)])][u(LIT.HEADER,Werewolf,Auspice,15,Tribe,20,Primal Urge,18)]%R[iter(sortby(SORT.[eval(%0)],%q1),[ljust(name(##),25)][ljust([xget(##,_Auspice)],15)][ljust(edit([xget(##,_Tribe)],_,%b),20)][ljust([xget(##,_Primal-Urge)],18)]%R, ,@@)][iter(%q0,[ljust(name(##),25)][ljust(Wolfblooded,53)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.WEREWOLF))])]
+@Daily Roster Command Object=[u(DAILY.IMMORTAL)][u(DAILY.CHANGELING)][u(DAILY.MAGE)][u(DAILY.HUNTER)][u(DAILY.MORTAL)][u(DAILY.WEREWOLF)][u(DAILY.VAMPIRE)][u(DAILY.FERAL)][u(DAILY.GEIST)][u(DAILY.POSSESSED)]
+
+&SORT.TRIBE Roster Command Object=[comp(xget(%0,_Tribe),xget(%1,_Tribe))]
+&SORT.AUSPICE Roster Command Object=[comp(xget(%0,_Auspice),xget(%1,_Auspice))]
+&SORT.POWERA Roster Command Object=[setq(A,[match(WEREWOLF GEIST MAGE VAMPIRE SHIFTER PURIFIED CHANGELING,[xget(%0,_Template)])])][setq(A,[switch(%qA,1,Primal-Urge,2,Psyche,3,Gnosis,4,Blood-Potency,5,Feral-Heart,6,Chi,7,Wyrd)])][comp(xget(%0,_[eval(%qA)]),xget(%1,_[eval(%qA)]))]
+&SORT.SEEMING Roster Command Object=[comp(xget(%0,_Seeming),xget(%1,_Seeming))]
+&SORT.KITH Roster Command Object=[comp(xget(%0,_Kith),xget(%1,_Kith))]
+&SORT.CLAN Roster Command Object=[comp(xget(%0,_Clan),xget(%1,_Clan))]
+&SORT.COVENANT Roster Command Object=[comp(xget(%0,_Covenant),xget(%1,_Covenant))]
+&SORT.ORDER Roster Command Object=[comp(xget(%0,_Order),xget(%1,_Order))]
+&SORT.PATH Roster Command Object=[comp(xget(%0,_Path),xget(%1,_Path))]
+&SORT.BREED Roster Command Object=[comp(xget(%0,_Breed),xget(%1,_Breed))]
+&SORT.SPECIES Roster Command Object=[comp(xget(%0,_Species),xget(%1,_Species))]
+&SORT.CLUTCH Roster Command Object=[comp(xget(%0,_Clutch),xget(%1,_Clutch))]
+&SORT.VICE Roster Command Object=[comp(xget(%0,_Primary-Vice),xget(%1,_Primary-Vice))]
+
+&F.DISP.SORTS.MORTAL Roster Command Object=[u(LIT.HEADER,Mortal,Template,25)]%R[iter(sortby(SORT.[eval(%0)],xget(me,DATA.PLAYERS.MORTAL)),[ljust(name(##),25)][ljust([edit([xget(##,_Template)],_,%b)],25)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.MORTAL))])]
+
+&F.DISP.SORTS.IMMORTAL Roster Command Object=[u(LIT.HEADER,Immortal,Template,25,Chi,25)]%R[iter(sortby(SORT.[eval(%0)],xget(me,DATA.PLAYERS.IMMORTAL)),[ljust(name(##),25)][ljust([edit([xget(##,_Template)],_,%b)],25)][if(match(xget(##,_Template),Purified),[ljust(xget(##,_Chi),25)])]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.IMMORTAL))])]
+
+&F.DISP.SORTS.CHANGELING Roster Command Object=[setq(0,[search(eplayer=and(match(xget(##,_Template),FaeTouched),isapproved(##)))])][setq(1,[setdiff([xget(me,DATA.PLAYERS.CHANGELING)],%q0)])][u(LIT.HEADER,Changeling,Seeming,12,Kith,25,Wyrd,16)]%R[iter(sortby(SORT.[eval(%0)],%q1),[ljust(name(##),25)][ljust([xget(##,_Seeming)],15)][ljust(edit([xget(##,_Kith)],_,%b),20)][ljust([xget(##,_Wyrd)],18)]%R, ,@@)][iter(%q0,[ljust(name(##),25)][ljust(Fae Touched,53)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.CHANGELING))])]
+
+&F.DISP.SORTS.POSSESSED Roster Command Object=[u(LIT.HEADER,Possessed,Vice,10,Clutch,28,Infernal Will,15)]%R[iter(sortby(SORT.[eval(%0)],xget(me,DATA.PLAYERS.POSSESSED)),[ljust(name(##),25)][ljust(xget(##,_PRIMARY-VICE),10)][ljust(xget(##,_Clutch),28)][ljust(3,15)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.POSSESSED))])]
+
+&F.DISP.SORTS.FERAL Roster Command Object=[setq(0,[search(eplayer=and(match(xget(##,_Template),Beastkin),isapproved(##)))])][setq(1,[setdiff([xget(me,DATA.PLAYERS.FERAL)],%q0)])][u(LIT.HEADER,Feral,Breed,20,Species,15,Feral Heart,18)]%R[iter(sortby(SORT.[eval(%0)],%q1),[ljust(name(##),25)][ljust([xget(##,_Breed)],20)][ljust(before(xget(##,_Species),:),15)][ljust([xget(##,_Feral-Heart)],18)]%R, ,@@)][iter(%q0,[ljust(name(##),25)][ljust(Beastkin,53)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.FERAL))])]
+
+&F.DISP.SORTS.MAGE Roster Command Object=[setq(0,[search(eplayer=and(match(Proximus Sleepwalker,xget(##,_Template)),isapproved(##)))])][setq(1,[setdiff([xget(me,DATA.PLAYERS.MAGE)],%q0)])][u(LIT.HEADER,Mage,Path,10,Order,25,Gnosis,18)]%R[iter(sortby(SORT.[eval(%0)],%q1),[ljust(name(##),25)][ljust([xget(##,_Path)],10)][ljust(edit(xget(##,_Order),_,%b),25)][ljust([xget(##,_Gnosis)],18)]%R, ,@@)][iter(%q0,[ljust(name(##),25)][ljust(xget(##,_Template),53)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.MAGE))])]
+
+&F.DISP.SORTS.VAMPIRE Roster Command Object=[setq(0,[search(eplayer=and(match(Ghoul,xget(##,_Template)),isapproved(##)))])][setq(1,[setdiff([xget(me,DATA.PLAYERS.VAMPIRE)],%q0)])][u(LIT.HEADER,Vampire,Clan,12,Covenant,25,Blood Potency,16)]%R[iter(sortby(SORT.[eval(%0)],%q1),[ljust(name(##),25)][ljust([xget(##,_Clan)],12)][ljust(edit(xget(##,_Covenant),_,%b),25)][ljust([xget(##,_Blood-Potency)],16)]%R, ,@@)][iter(%q0,[ljust(name(##),25)][ljust(Ghoul,53)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.VAMPIRE))])]
+
+&F.DISP.GEIST Roster Command Object=[u(LIT.HEADER,Geist,Threshold,20,Archetype,20,Psyche,13)]%R[iter(sortby(SORT.ALPHA,xget(me,DATA.PLAYERS.GEIST)),[ljust(name(##),25)][ljust([xget(##,_Threshold)],20)][ljust(xget(##,_Archetype),20)][ljust(xget(##,_Psyche),13)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.GEIST))])]
+
+&F.DISP.SORTS.GEIST Roster Command Object=[u(LIT.HEADER,Geist,Threshold,20,Archetype,20,Psyche,13)]%R[iter(sortby(SORT.[eval(%0)],xget(me,DATA.PLAYERS.GEIST)),[ljust(name(##),25)][ljust([xget(##,_Threshold)],20)][ljust(xget(##,_Archetype),20)][ljust(xget(##,_Psyche),13)]%R, ,@@)][u(LIT.FOOTER,[words(xget(me,DATA.PLAYERS.GEIST))])]
+
+&DATA.SORTS.GEIST Roster Command Object=Alpha Template Threshold Archetype PowerA PowerD
+
+&SORT.ARCHETYPE Roster Command Object=[comp(xget(%0,_Archetype),xget(%1,_Archetype))]
+&SORT.THRESHOLD Roster Command Object=[comp(xget(%0,_Threshold),xget(%1,_Threshold))]
+&SORT.POWERD Roster Command Object=[setq(A,[match(WEREWOLF GEIST MAGE VAMPIRE SHIFTER PURIFIED CHANGELING,[xget(%0,_Template)])])][setq(A,[switch(%qA,1,Primal-Urge,2,Psyche,3,Gnosis,4,Blood-Potency,5,Feral-Heart,6,Chi,7,Wyrd)])][comp(xget(%1,_[eval(%qA)]),xget(%0,_[eval(%qA)]))]
+
+&DATA.STAT-TYPES Roster Command Object=Attribute Skill Arcana Armory Aspects Benediction Blessing Bloodline Breed Castigation Ceremonies Clan Conspiracy Contract Covenant Cult-Rite Devotion Discipline Ducheval Dynasty Elixir Endowment Entitlement Family Favor Freehold Gift Goblin Keys Kith Legacy Lodge Manifestation Merit Numina Profession Relic Renown Respect Rite Ritual Rote Siddhi Tactic Thaumatechnology Theban Vestment Vice-Power Power
+
+&F.ROSTER.FILTER.PARSE Roster Command Object=[iter(%1,[switch([regmatch(##,=)][regmatch(##,>)][regmatch(##,<)][regmatch(##,:)],1000,[if(setr(1,match(xget(me,DATA.STAT-TYPES),before(##,=))),[if(words(%q0),[setq(0,%q0 [before(##,=)]|eq|[after(##,=)])],[setq(0,[before(##,=)]|eq|[after(##,=)])])],[if(words(%q0),[setq(0,%q0 NF)],[setq(0,NF)])])],0100,[if(setr(1,match(xget(me,DATA.STAT-TYPES),before(##,=))),[if(words(%q0),[setq(0,%q0 [before(##,=)]|gt|[after(##,=)])],[setq(0,[before(##,=)]|gt|[after(##,=)])])],[if(words(%q0),[setq(0,%q0 NF)],[setq(0,NF)])])],0010,[if(setr(1,match(xget(me,DATA.STAT-TYPES),before(##,=))),[if(words(%q0),[setq(0,%q0 [before(##,=)]|lt|[after(##,=)])],[setq(0,[before(##,=)]|lt|[after(##,=)])])],[if(words(%q0),[setq(0,%q0 NF)],[setq(0,NF)])])],0001,[if(setr(1,match(xget(me,DATA.STAT-TYPES),before(##,=))),[if(words(%q0),[setq(0,%q0 [before(##,=)]|match|[after(##,=)])],[setq(0,[before(##,=)]|match|[after(##,=)])])],[if(words(%q0),[setq(0,%q0 NF)],[setq(0,NF)])])])],|,@@)]%RDebug: %q0
+
+&F.ROSTER.SWITCH.FILTER Roster Command Object=[if(or(match(xget(me,DATA.ACCESS.TL.[before(%0,=)]),%#),hasflag(%#,W)),[if([match(xget(me,DATA.DEPARTMENTS),before(%0,=))],[u(F.ROSTER.FILTER.ERRCHK,[before(%0,=)],[after(%0,=)])],[ansi(hr,ERROR:)]%bSphere specified is not a valid sphere)],[ansi(hr,ERROR:)]%bYou don't have access to this function.)]
+
+&F.ROSTER.FILTER.ERRCHK Roster Command Object=[if(match(xget(me,data.departments),%0),[if(match(xget(me,data.stat-types),[extract(%1,1,1,/)]),[switch([words(%1,/)],2,[u(F.DISP.FILTER,[before(%1,/)],[after(%1,/)],%0)],3,[u(F.DISP.FILTER,[extract(%1,1,1,/)],[extract(%1,2,1,/)],[extract(%1,3,1,/)],%0)],[ansi(hr,ERROR:)]%bFilter expects 2 or 3 arguments.)],[ansi(hr,ERROR:)]%bThat stat type wasn't acceptable. See stat/list)],[ansi(hr,ERROR:)]%bThat sphere isn't a valid sphere.)]
+
+&F.DISP.FILTER.WEREWOLF Roster Command Object=[u(LIT.HEADER,Werewolf,Auspice,15,Tribe,20,Primal Urge,18)]%R[iter(sortby(SORT.ALPHA,%0),[ljust(name(##),25)][if(match(xget(##,_Template),Werewolf),[ljust([xget(##,_Auspice)],15)][ljust(edit([xget(##,_Tribe)],_,%b),20)][ljust([xget(##,_Primal-Urge)],18)]%R,[ljust(Wolfblooded,53)]%R)], ,@@)][u(LIT.FOOTER,[words(%0)] of [words(xget(me,DATA.PLAYERS.WEREWOLF))])]
+
+&F.DISP.FILTER.GEIST Roster Command Object=[u(LIT.HEADER,Geist,Threshold,20,Archetype,20,Psyche,13)]%R[iter(sortby(SORT.ALPHA,%0),[ljust(name(##),25)][ljust([xget(##,_Threshold)],20)][ljust(xget(##,_Archetype),20)][ljust(xget(##,_Psyche),13)]%R, ,@@)][u(LIT.FOOTER,[words(%0)] of [words(xget(me,DATA.PLAYERS.GEIST))])]
+
+&F.DISP.FILTER.IMMORTAL Roster Command Object=[u(LIT.HEADER,Immortal,Type,25,Chi,25)]%R[iter(sortby(SORT.ALPHA,%0),[ljust(name(##),25)][ljust([edit([xget(##,_Template)],_,%b)],25)][if(match(xget(##,_Template),Purified),[ljust(xget(##,_Chi),25)])]%R, ,@@)][u(LIT.FOOTER,[words(%0)] of [words(xget(me,DATA.PLAYERS.IMMORTAL))])]
+
+&F.DISP.FILTER.HUNTER Roster Command Object=[u(LIT.HEADER,Hunter,Conspiracy,25)]%R[iter(sortby(SORT.ALPHA,%0),[ljust(name(##),25)][ljust([edit([xget(##,_Conspiracy)],_,%b)],25)]%R, ,@@)][u(LIT.FOOTER,[words(%0)] of [words(xget(me,DATA.PLAYERS.HUNTER))])]
+
+&F.DISP.FILTER.VAMPIRE Roster Command Object=[u(LIT.HEADER,Vampire,Clan,12,Covenant,25,Blood Potency,16)]%R[iter(sortby(SORT.ALPHA,%0),[ljust(name(##),25)][if(match(xget(##,_Template),Vampire),[ljust(xget(##,_Clan),12)][ljust(edit(xget(##,_Covenant),_,%b),25)][ljust(xget(##,_Blood-Potency),16)]%R,[ljust(Ghoul,53)]%R)], ,@@)][u(LIT.FOOTER,[words(%0)] of [words(xget(me,DATA.PLAYERS.VAMPIRE))])]
+
+&F.DISP.FILTER.MAGE Roster Command Object=[u(LIT.HEADER,Mage,Path,10,Order,25,Gnosis,18)]%R[iter(sortby(SORT.ALPHA,%0),[ljust(name(##),25)][switch(xget(##,_Template),Proximus,[ljust(Proximus,10)][ljust(edit(xget(##,_Order),_,%b),25)],Mage,[ljust(xget(##,_Path),10)][ljust(edit(xget(##,_Order),_,%b),25)][ljust(xget(##,_Gnosis),18)],Sleepwalker,[ljust(Sleepwalker,53)])]%R, ,@@)][u(LIT.FOOTER,[words(%0)] of [words(xget(me,DATA.PLAYERS.MAGE))])]
+
+&F.DISP.FILTER.FERAL Roster Command Object=[u(LIT.HEADER,Feral,Breed,20,Species,15,Feral Heart,18)]%R[iter(sortby(SORT.ALPHA,%0),[if(match(xget(##,_Template),Beastkin),[ljust(name(##),25)][ljust(Beastkin,53)]%R,[ljust(name(##),25)][ljust(edit(xget(##,_Breed),_,%b),20)][ljust(before(xget(##,_Species),:),15)][ljust(xget(##,_Feral-Heart),18)]%R)], ,@@)][u(LIT.FOOTER,[words(%0)] of [words(xget(me,DATA.PLAYERS.FERAL))])]
+
+&F.DISP.FILTER.POSSESSED Roster Command Object=[u(LIT.HEADER,Possessed,Vice,10,Clutch,28,Infernal Will,15)]%R[iter(sortby(SORT.ALPHA,%0),[ljust(name(##),25)][ljust(xget(##,_PRIMARY-VICE),10)][ljust(xget(##,_Clutch),28)][ljust(xget(##,_Infernalwill),15)]%R, ,@@)][u(LIT.FOOTER,[words(%0)] of [words(xget(me,DATA.PLAYERS.POSSESSED))])]
+
+&F.DISP.FILTER.CHANGELING Roster Command Object=[u(LIT.HEADER,Changeling,Seeming,12,Kith,25,Wyrd,16)]%R[iter(sortby(SORT.ALPHA,%0),[if(match(xget(##,_Template),FaeTouched),[ljust(name(##),25)][ljust(Fae Touched,53)],[ljust(name(##),25)][ljust(xget(##,_Seeming),12)][ljust(xget(##,_Kith),25)][ljust(xget(##,_Wyrd),16)])]%R, ,@@)][u(LIT.FOOTER,[words(%0)] of [words(xget(me,DATA.PLAYERS.CHANGELING))])]
+
+&F.DISP.FILTER.MORTAL Roster Command Object=[u(LIT.HEADER,Mortal,Template,53)]%R[iter(sortby(SORT.ALPHA,%0),[ljust(name(##),25)][ljust(xget(##,_Template),53)]%R, ,@@)][u(LIT.FOOTER,[words(%0)] of [words(xget(me,DATA.PLAYERS.MORTAL))])]
+
+&F.DISP.FILTER Roster Command Object=[if(%2,[switch([regmatch(%2,>)][regmatch(%2,<)][regmatch(%2,=)],100,[setq(1,gt)][setq(2,after(%2,>))],010,[setq(1,lt)][setq(2,after(%2,<))],001,[setq(1,eq)][setq(2,after(%2,=))])],[setq(1,0)])][switch([match(xget(me,data.stat-types),%0)],1,[setq(0,[match(xget(#89,list_attribute),%1)])][if(%q0,[if(%q1,[iter(xget(me,data.players.%3),[if([%q1(extract(xget(##,_Attributes),%q0,1, ),%q2)],setq(3,%q3 ##))], ,@@)][u(F.DISP.FILTER.%3,%q3)],[ansi(hr,ERROR:)]%bAttribute filter expects a value.)],[ansi(hr,ERROR:)]%bAttribute %1 not valid.)],2,[setq(0,[match(xget(#89,list_skill),%1)])][if(%q0,[if(%q1,[iter(xget(me,data.players.%3),[if([%q1(extract(xget(##,_Skills),%q0,1, ),%q2)],setq(3,%q3 ##))], ,@@)][u(F.DISP.FILTER.%3,%q3)],[ansi(hr,ERROR:)]%bSkill filter expects a value.)],[ansi(hr,ERROR:)]%bSkill %1 not valid.)],3,[if(match(%2 %3,*Mage*),[if(%q1,[iter(xget(me,DATA.PLAYERS.MAGE),[if(setr(4,match(xget(##,_Arcana),%1*)),[if([%q1(after(extract(xget(##,_Arcana),%q4,1, ),:),%q2)],setq(3,%q3 ##))])], ,@@)],[iter(xget(me,DATA.PLAYERS.MAGE),[if(match(xget(##,_Arcana),%1*),[setq(3,%q3 ##)])], ,@@)])][u(F.DISP.FILTER.%3,%q3)],[ansi(hr,ERROR:)]%bOnly Mages have Arcana)],5,[if(match(%2 %3,*Feral*),[iter(xget(me,DATA.PLAYERS.FERAL),[if(match(xget(##,_Aspects),*[edit(%1,%b,_)]*),setq(3,%q3 ##))], ,@@)][u(F.DISP.FILTER.Feral,%q3)],[ansi(hr,ERROR:)]%bOnly Ferals have Aspects.)],14,[if(match(%2 %3,*Changeling*),[iter(xget(me,DATA.PLAYERS.CHANGELING),[if(match(xget(##,_Contracts),*[edit(%1,%b,_)]*),setq(3,%q3 ##))], ,@@)][u(F.DISP.FILTER.Changeling,%q3)],[ansi(hr,ERROR:)]%bOnly Changelings have Contracts.)],18,[if(match(%2 %3,*Vampire*),[iter(xget(me,DATA.PLAYERS.VAMPIRE),[if(%q1,[if([setr(4,match(xget(##,_Disciplines),*%1*))],if([%q1([after(extract(xget(##,_Disciplines),%q4,1, ),:)],%q2)],setq(3,%q3 ##)))],[if(match(xget(##,_Disciplines),*%1*),setq(3,%q3 ##))])], ,@@)][u(F.DISP.FILTER.Vampire,%q3)],[ansi(hr,ERROR:)]%bOnly Vampires have Disciplines.)],25,[if(match(%2 %3,*Feral*),[iter(xget(me,DATA.PLAYERS.FERAL),[if(match(xget(##,_Favors),*%1*),setq(3,%q3 ##))], ,@@)][u(F.DISP.FILTER.Feral,%q3)],[ansi(hr,ERROR:)]%bOnly Vampires have Disciplines.)],27,[if(match(%2 %3,*Werewolf*),[iter(xget(me,DATA.PLAYERS.WEREWOLF),[if(match(xget(##,_Gifts),*[edit(%1,%b,_)]*),setq(3,%q3 ##))], ,@@)][u(F.DISP.FILTER.Werewolf,%q3)],[ansi(hr,ERROR:)]%bOnly Vampires have Disciplines.)],33,[if(match(%2 %3,*Geist*),[iter(xget(me,DATA.PLAYERS.GEIST),[if(%q1,[if(setr(4,match(xget(##,_Manifestations),*%1*)),[if([%q1([after(extract(xget(##,_Manifestations),%q4,1, ),:)],%q2)],setq(3,%q3 ##))])],[if(match(xget(##,_Manifestations),*%1*),setq(3,%q3 ##))])], ,@@)][u(F.DISP.FILTER.Geist,%q3)],[ansi(hr,ERROR:)]%bOnly Vampires have Disciplines.)],34,[if(%q1,[iter(xget(me,DATA.PLAYERS.%3),[if(setr(4,match(xget(##,_Merits),*%1*)),[if([%q1(extract(extract(xget(##,_Merits),%q4,1,|),2,1,~),%q2)],setq(3,%q3 ##))])], ,@@)][u(F.DISP.FILTER.[if(%q1,%3,%2)],%q3)],[iter(xget(me,DATA.PLAYERS.%2),[if(match(xget(##,_Merits),*%1*),setq(3,%q3 ##))], ,@@)][u(F.DISP.FILTER.[if(%q1,%3,%2)],%q3)])],38,[if(match(%2 %3,*Werewolf*),[if(%q1,[iter(xget(me,DATA.PLAYERS.WEREWOLF),[if(setr(4,match(xget(##,_Renown),*%1*)),[if([%q1(extract(extract(xget(##,_Renown),%q4,1,|),2,1,~),%q2)],setq(3,%q3 ##))])], ,@@)][u(F.DISP.FILTER.Werewolf,%q3)],[iter(xget(me,DATA.PLAYERS.WEREWOLF),[if(match(xget(##,_Renown),*%1*),setq(3,%q3 ##))], ,@@)][u(F.DISP.FILTER.Werewolf,%q3)])],[ansi(hr,ERROR:)]%bOnly Vampires have Disciplines.)],49,[iter(xget(me,DATA.PLAYERS.%3),[if([%q1(xget(##,_%1),%q2)],setq(3,%q3 ##))], ,@@)][u(F.DISP.FILTER.%3,%q3)],[ansi(hr,SEMIERROR:)]%bYou entered a legitimate stat type however no code exists for it. If you really need it ask for it to be added.)]
+
+&CMD.WATCH.SPHERE Roster Command Object=$+roster/addwatch *:@assert [isstaff(%#)];@assert [match(xget(me,DATA.DEPARTMENTS),%0)]=[pemit(%#,[ansi(hr,ERROR:)]%bCan't find that splat.)];@assert [or([match([u(F.DETERMINE.SPLAT,%#)],%0)],[hasflag(%#,W)],[match([xget(me,DATA.ACCESS.%0)],%#)],[match([xget(me,DATA.ACCESS.%0.TL)],%#)])]=[ansi(hr,ERROR:)]%bYou don't have permission to access that sphere.;@if [t(xget(%#,FRIENDS))]=[set(%#,FRIENDS:[setunion([xget(%#,FRIENDS)],[xget(me,DATA.PLAYERS.%0)])])],[set(%#,FRIENDS:[xget(me,DATA.PLAYERS.%0)])];@pemit %#=[ansi(hw,ROSTER:)]%bAdded all current players from %0 to your watch list.

@@ -1,0 +1,24 @@
+@	Reach Mux
+@	+Vote System
+@	Coded by: Gizmo AKA Ourea, Alzie
+@	Coded for: The Reach Mux
+@	Email: ccubed.techno@gmail.com
+@	Date Last Touched: 2/9/2014
+@----------------------------------------------------------------------------
+@	Purpose: Make a system to allow individuals to make votes on issues
+@	that are locked to a lock string
+@----------------------------------------------------------------------------
+@	#18901
+@	# takes
+@	#   user name
+@	#   forum path name
+@	#   topic title
+@	#   post body
+@	&fn_simple_post_new_topic
+
+&CMD.VOTE #18901=$+vote:
+&CMD.VOTE.ADD #18901=$+vote/add */*=*:
+&CMD.VOTE.VOTE #18901=$+vote *=*:
+&CMD.VOTE.STATS #18901=$+vote/stats *:
+&CMD.VOTE.CLOSE #18901=$+vote/close *:
+&CMD.VOTE.DUE #18901=$+vote/due *=*:
