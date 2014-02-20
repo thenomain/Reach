@@ -8,16 +8,20 @@ Whether or not this can be attained easily remains to be seen.
 
 
 &C.XP-COST.GUESS #14370=$+xpcost *:
+	@break strmatch( %0, *|* )={ 
+		@pemit %#=You can't use the | character in this command. 
+	}; 
+
 	think 
-		matching: [regmatchi(%0, v( d.regmatch.xpreq ), 0 1 2 3 4 )]%r
-		category: [setr( c, trim( first( %q1, / )))] %r
-		stat: [setr( s, trim( before( rest( %q1, / ), : )))] %r
-		type: [setr( t, titlestr( trim( rest( %q1, : ))))] %r
-		to value: %q3 %r
-		cost: [setr( x, 
-			trim( before( before( %q4, = ), xp ))
-		)]%r
-		notes: [setr( n, trim( after( %0, = )))]%r
+		break apart input: [setr( m, u( f.input.break-apart, %0 ))]%r
+		put input into registers: %r%b %b
+			[iter( %qm, [inum( 0 )]: [setr( inum( 0 ), %i0 )], |, %r%b %b )]%r
+		category: %q1 %r
+		stat: %q2 %r
+		type: %q3 %r
+		to value: %q4 %r
+		cost: %q5 %r
+		notes: %q6 %r
 		in chargen?: [setr( a, isapproved( %#, unapproved ))];
 
 	@assert cor( isapproved( %# ), %qa )={ 
@@ -28,7 +32,7 @@ Whether or not this can be attained easily remains to be seen.
 		@pemit %#=I can't find sheet category '%qc'. 
 	}; 
 
-	@assert eq( words( rest( setr( i, mall( sheetset, %qc )) , : )), 1 )={ 
+	@assert eq( words( rest( setr( i, mall( sheetset, %q1 )) , : )), 1 )={ 
 		@pemit %#=Category: %qi 
 	}; 
 
@@ -43,18 +47,17 @@ Whether or not this can be attained easily remains to be seen.
 					%qc 
 				)
 			)] %r
-		stat_with_underscores: [setr( e, edit( %qs, %b, _ ))]; 
+		stat_with_underscores: [setr( e, edit( %q2, %b, _ ))]; 
 
 	@trigger %!/trig.xp-cost.
 		[if( strmatch( %qc, specialty ), specialty, normal )]=
 		%#, 
-		%q3, 
-		%qn, 
+		%q4, 
+		%q6, 
 		%qc, 
 		%qe, 
-		%qt, 
-		%qx, 
-		@@(no longer used), 
+		titlestr( %q3 ), 
+		%q5, 
 		%qa;
 
 
@@ -69,13 +72,12 @@ Whether or not this can be attained easily remains to be seen.
 
 0: enactor (%#)
 1: to-value
-2: notes <-- Ignored for testing 
+2: notes
 3: trait category
 4: stat/trait with underscores
 5: type (instance)
 6: unadjusted cost
-7: adjusted cost <-- NO LONGER USED 
-8: 1 if unapproved
+7: 1 if unapproved
 
 f: full stat name (for partial-name matching)
 u: templates that are allowed access
@@ -123,8 +125,10 @@ Currently works only with 'normal' traits, not global nor specialties.
 	
 	@assert 
 		if( 
+@@ .. .. skip this check on classes that don't take values
 			t( match( v( d.no-value.classes ), %3 )), 
 			1, 
+@@ .. .. yeah, I can't remember what this is doing
 			or( 
 				t( match( cat( setr( v, u( f.list.costs, %qf )), 0 ), %1 )), 
 				cand( strmatch( %qv, ), isint( %1 ), gte( %1, 0 ))
@@ -153,19 +157,41 @@ Currently works only with 'normal' traits, not global nor specialties.
 	}; 
 
 @@ .. estimate xp value
-@@ .. (AIGH WILLPOWER! Make this work!)
+@@ .. check 'xp.<class>.<trait>' for exceptions, then 'xp.<class>'
+@@ .. (remember, for this system, some traits are considered classes)
 	think 
-	cost: [setr( x, 
-			udefault( xp.[edit( %3, %b, _ )].%4, 
-				u( xp.[edit( %3, %b, _ )], %0, %qz, %1 ), 
-				%0, 
-				%qz, 
-				%1 
-			)
-		)]%r
-	[footer()]; 
+		cost: [setr( x, 
+				udefault( xp.[edit( %3, %b, _ )].%4, 
+					u( xp.[edit( %3, %b, _ )], %0, %qz, %1 ), 
+					%0, 
+					%qz, 
+					%1, 
+					%qv  
+				)
+			)]; 
 
-	@pemit %0=Cost: I think getting '[if( t( %qf ), %qf, first( %qi, : ))][if( t( %5 ), %b%(%5%))]' to %1 costs %qx xp.
+	@break eq( %qx, 0 )={ 
+		@pemit %0=You cannot '+xpreq %qf' because its cost is recorded as 0. 
+		Try: +xpreq/job <title>=<request>
+	}; 
+
+@@ >> Display Results
+@@ .. if xp spent =/= xp cost, needs a reason/explanation
+	@break cand( neq( %6, %qx ), not( strlen( %2 )))={ 
+		@pemit %0=Cost: I think getting 
+		'[if( t( %qf ), %qf, first( %qi, : ))][if( t( %5 ), %b%(%5%))]' 
+		[if( strlen( %1 ), to %1%b)]
+		costs %qx xp. 
+		You put in %6 xp with no explanation for the difference.
+	}; 
+
+	@pemit %0=Cost: I think getting 
+	'[if( t( %qf ), %qf, first( %qi, : ))][if( t( %5 ), %b%(%5%))]' 
+	[if( strlen( %1 ), to %1%b)]
+	costs %qx xp. 
+	You put in %6 xp with notes of '%2'.
+
+
 
 -=--=-=-=-=-=-=-=-=-=-=
 
@@ -210,9 +236,70 @@ Currently works only with 'normal' traits, not global nor specialties.
 		@pemit %0=Unadjusted costs must be set to a positive integer value. 
 	}; 
 
-	@pemit %0=Cost: I think getting '%qf.%qt' costs %qx xp.
+
+@@ >> Display Results
+@@ .. if xp spent =/= xp cost, needs a reason/explanation
+	@break cand( neq( %6, %qx ), not( strlen( %2 )))={ 
+		@pemit %0=Cost: I think getting 
+		'%qf.%qt' costs %qx xp. You put in %6 xp with a reason of '%2'.
+		You put in %6 xp with no explanation for the difference.
+	}; 
+
+	@pemit %0=Cost: I think getting 
+	'%qf.%qt' costs %qx xp. You put in %6 xp with a reason of '%2'.
 
 
+
+-=-=-=-=-=-=-=-=
+
+@@ depreciated for 'f.input.break-apart'
+
+&D.REGMATCH.XPREQ #14370=(.*?)( to (.+))? for ([0-9]+.*)
+
+--
+
+@@ &d.regmatch.xpreq.cost #14370=(.+?)( to (.+?))?( for ([0-9]+.*))?
+@@ Not going to work; Chime says I need a lookahead, so no.
+
+-==--=-=-==-=-=--
+
+pull apart the stuff instead of using regmatch:
+
++xpreq [<trait category>/]<trait name>[:<trait instance>][ to <new value>][ for <adjusted xp cost>][=<reason/notes>]
+
+Returns:
+	<trait category>|<trait name>|<trait instance>|<new value>|<adjusted xp>|<reason/notes>
+
+--
+
+&f.input.break-apart #14370=
+localize( 
+	strcat( 
+		setq( 0, trim( %0 )), 
+		setq( 1, trim( before( before( before( %q0, = ), %bfor%b ), %bto%b ))), 
+		setq( 2, trim( after( before( before( %q0, = ), %bfor%b ), %bto%b ))), 
+		setq( 3, trim( before( after( before( %q0, = ), %bfor%b ), xp ))), 
+		setq( 4, trim( after( %q0, = ))), 
+		trim( first( %q1, / )), |, 
+		trim( first( rest( %q1, / ), : )), |, 
+		trim( rest( %q1, : )), |, 
+		%q2, |, 
+		%q3, |, 
+		%q4 
+	)
+)
+
+--
+
+think u( #14370/f.input.break-apart, group/trait to 4=reason )
+think u( #14370/f.input.break-apart, group/trait=reason )
+think u( #14370/f.input.break-apart, group/trait for 5xp=reason )
+think u( #14370/f.input.break-apart, group / trait to 4 for 14 xp = reason )
+think u( #14370/f.input.break-apart, group / trait : instance to 4 for 14 xp = reason )
+
+think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a test to see ...  )
+
+--
 
 
 ================================================================================
@@ -221,6 +308,7 @@ Currently works only with 'normal' traits, not global nor specialties.
 @@ 0: dbref of target
 @@ 1: from
 @@ 2: to
+@@ 3: valid levels list, if applicable
 
 @@ -- standard
 &xp.attribute #14370=u( f.cost.standard, 5, %1, %2 )
@@ -228,7 +316,8 @@ Currently works only with 'normal' traits, not global nor specialties.
 &xp.skill.specialty #14370=3
 &xp.merit #14370=u( f.cost.standard, 2, %1, %2 )
 &xp.morality #14370=u( f.cost.standard, 3, %1, %2 )
-&xp.willpower #14370=u( f.cost.single, 8, %1, %2 )
+@@ &xp.willpower #14370=u( f.cost.single, 8, %1, %2 )
+&xp.willpower #14370=0
 &xp.power_trait #14370=u( f.cost.standard, 8, %1, %2 )
 
 @@ -- changeling
@@ -238,7 +327,8 @@ Currently works only with 'normal' traits, not global nor specialties.
 &xp.merit.token_limb #14370=u( f.cost.standard, 3, %1, %2 )
 
 @@ -- changing breeds
-&xp.aspect #14370=u( f.cost.standard, 5, %1, %2 )
+
+&xp.aspects #14370=u( f.cost.no-phantom-dots, 5, %1, %2, %3 )
 &xp.favor #14370=u( f.cost.standard, 7, %1, %2 )
 &xp.renown #14370=u( f.cost.standard, case( template( %0 ), Shifter, 6, Werewolf, 8, 0 ), %1, %2 )
 
@@ -251,13 +341,14 @@ Currently works only with 'normal' traits, not global nor specialties.
 &xp.thaumatechnology #14370=u( f.cost.standard, 2, %1, %2 )
 &xp.ducheval #14370=2
 &xp.armory #14370=u( f.cost.standard, 2, %1, %2 )
-&xp.tactic.whichever #14370=u( f.cost.standard, <cost>, %1, %2 )
+@@ .. tactics are never bought with xp and are beyond the scope
+&xp.tactic #14370=0
 
 @@ -- geist
 &xp.psyche #14370=u( f.cost.standard, 8, %1, %2 )
-&xp.manifestation #14370=u( f.cost.standard, 6, %1, %2 )
+&xp.manifestations #14370=u( f.cost.standard, 6, %1, %2 )
 &xp.key #14370=10
-&xp.ceremony #14370=u( f.cost.standard, 8, %1, %2 )
+&xp.ceremonies #14370=u( f.cost.standard, 8, %1, %2 )
 
 @@ -- mage
 &xp.gnosis #14370=u( f.cost.standard, 8, %1, %2 )
@@ -304,9 +395,11 @@ Currently works only with 'normal' traits, not global nor specialties.
 ================================================================================
 == COST CALCULATIONS ===========================================================
 
-@@ 0: value
+@@ 0: xp cost
 @@ 1: from (first)
 @@ 2: to (last)
+@@ 3: stat's numeric value list (e.g., 2.4)
+
 @@ Numbers from 'first' to 'last' is: ( L² - F² + F + L ) / 2 
 @@ We '++from' because we want all the numbers it's raised /past/ 'from'.
 @@ So: (( L² - ++F² + ++F + L ) / 2 ) * cost
@@ -319,6 +412,9 @@ Currently works only with 'normal' traits, not global nor specialties.
 
 @@ cost * levels bought
 &f.cost.single #14370=mul( %0, sub( %2, %1 ))
+
+@@ for changing breed "aspects"
+&f.cost.no-phantom-dots #14370=ladd( iter( setinter( %3, lnum( inc(%1), %2 )), mul( %0, %i0 )))
 
 
 ================================================================================
@@ -347,7 +443,7 @@ Gutter Magic Spell	New Dots x 3
 
 ** Geist
 Ceremony (Mentored) [3]	 Dots x 2
-Ceremony (Self-Taught) [3]	 Dots x 3
+Ceremony (Self-Taught) [3]	Dots x 3
 
 ** Mage
 Ruling Arcanum	 New Dots x 6
