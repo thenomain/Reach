@@ -8,7 +8,7 @@
 @	Purpose: Make a system to allow individuals to make votes on issues
 @	that are locked to a lock string
 @----------------------------------------------------------------------------
-@	#18901
+@	#5185
 @	# takes
 @	#   user name
 @	#   forum path name
@@ -18,55 +18,109 @@
 @
 @
 @	Storage:
-@	&VOTE_[ID] - Title
+@	&VOTE_[ID] - Title|Description
+@	&DATA_[ID]_DUE - due date
 @	&DATA_[ID]_VOTERS - People Who Have Voted
-@	&DATA_[ID]_VOTES - Tally of Votes in form ID:NUMBER
-@	&DATA_[ID]_OPTIONS - Options in the form ID:Text/ID:Text, etc
-@	&LOCK_[ID]_LOCK_PLAYERS_BLOCKED - list of players blocked from voting
-@	&LOCK_[ID]_LOCK_PLAYERS_ALLOWED - list of players allowed to vote
-@	&LOCK_[ID]_LOCK_FACTION - faction to lock a vote to
-@	&LOCK_[ID]_LOCK_TEMPLATE - Lock vote to template(s)
+@	&DATA_[ID]_VOTES - Tracks individual votes, Wizard Only
+@	&DATA_[ID]_TALLY - Tracks Votes Per Option
+@	&DATA_[ID]_VLCK - List of people allowed to see the votes of individuals. Wizards bypass this lock
+@	&DATA_[ID]_OPTIONS - Options in the form ID:Text|ID:Text, etc
+@	&LOCK_[ID]_BLOCKED - list of players blocked from voting
+@	&LOCK_[ID]_ALLOWED - list of players allowed to vote
+@	&LOCK_[ID]_FACTION - faction to lock a vote to
+@	&LOCK_[ID]_TEMPLATE - Lock vote to template(s)
+@	&LOCK_[ID]_UNLOCKED - An unlocked Issue
+@	&OPTIONS_[ID]_[OPTION ID] - Stores options. Value is Text shown next to option
 @
 @
 @	Who Can Vote: To vote, a player must pass one of LOCK_FACTION, LOCK_TEMPLATE or LOCK_PLAYERS_ALLOWED AND NOT be in LOCK_PLAYERS_BLOCKED
 @	Note that LOCK_PLAYERS_BLOCKED is considered a master lock. 
 @	Blocked are not allowed to vote regardless of passing any other locks.
 
+@	ACONNECT
+@	Passed: nothing
+@	Tell a player if they have votes
+@ACONNECT #18091=[u(F.UNLOCKED)][if(t(%qG),[setq(X,0)][iter(%qG,[if(not(member(xget(me,DATA_%i0_VOTERS),%#)),[setq(X,1)])], ,@)][if(%qX,[pemit(%#,[ansi(hw,VOTE:)]%bThere are currently issues to vote on. Please check +vote.)],[pemit(%#,[ansi(hw,VOTE:)]%bThere are currently no issues to vote on.)])],[pemit(%#,[ansi(hw,VOTE:)]%bThere are currently no issues to vote on.)])]
+
 @	CMD.VOTE 
 @	Passed: Nothing
 @	Returns: Overview of issues to vote on
-&CMD.VOTE #18901=$+vote:@switch [attrcnt(me/LOCK*)]=0,{@pemit %#=[ansi(hw,VOTE:)]%bThere are currently no issues to vote on.},{@pemit %#=[u(F.DISP.VOTES,%#)]}
+&CMD.VOTE #18091=$+vote:@switch [attrcnt(me/LOCK*)]=0,{@pemit %#=[ansi(hw,VOTE:)]%bThere are currently no issues to vote on.},{@pemit %#=[u(F.DISP.VOTES,%#)]}
+
+@	CMD.VOTE.VIEW
+@	Passed: Nothing
+@	Returns: View a specific issue
+&CMD.VOTE.VIEW #18091=$+vote *:@break [t(after(%0,=))];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bThat ID doesn't match any current vote.};@pemit %#=[header(Vote %0)]%R%B[center([ansi(hw,[extract(xget(me,VOTE_%0),1,1,|)])],77,[ansi(hx,-)])]%R%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,OPTIONS)],77,[ansi(hx,-)])]%R[iter(lattr(me/OPTIONS_%0*),[ljust([last(%i0,_)],25)][ljust([xget(me,%i0)],50)]%R, ,@@)]%R[footer()]
 
 @	CMD.VOTE.ADD
-@	Passed: Title
+@	Passed: Title,Description
 @	Purpose: Addes a vote to the system
-&CMD.VOTE.ADD #18901=$+vote/add *:@assert [isstaff(%#)];@assert [t(%0)]={@pemit %#=[ansi(hw,VOTE:)]%bYou didn't specify a title.};[set(me,VOTE_[setr(a,[inc(xget(me,DATA.CID))])]:%0)][set(me,DATA.CID:%qA)];@pemit %#=[ansi(hw,VOTE:)]%bAdded vote %qA with title %0
+&CMD.VOTE.ADD #18091=$+vote/add */*:@assert [isstaff(%#)];@assert [t(%0)]={@pemit %#=[ansi(hw,VOTE:)]%bYou didn't specify a title.};[set(me,VOTE_[setr(a,xget(me,DATA.CID))]:%0|%1)][set(me,DATA.CID:[inc(%qA)])][set(me,LOCK_%qA_UNLOCKED:1)];@pemit %#=[ansi(hw,VOTE:)]%bAdded vote %qA with title %0
 
 @	CMD.VOTE.SET
 @	Passed: ID,Option,Value
 @	Purpose: Set Locks and Due on an issue
-&CMD.VOTE.SET #18901=$+vote/set */*=*:
+&CMD.VOTE.SET #18091=$+vote/set */*=*:@assert [isstaff(%#)];@assert [member(due blocked allowed faction template,[lcstr(%1)])]={@pemit %#=[ansi(hw,VOTE:)]%bThat's not a valid option.};@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bDidn't find a vote with that ID.};@switch [lcstr(%1)]=due,[pemit(%#,[u(F.SET.DUE,%0,%2)])],blocked,[pemit(%#,[u(F.SET.LOCK.BLOCKED,%0,%2)])],allowed,[pemit(%#,[u(F.SET.LOCK.ALLOWED,%0,%2)])],faction,[pemit(%#,[u(F.SET.LOCK.FACTION,%0,%2)])],template,[pemit(%#,[u(F.SET.LOCK.TEMPLATE,%0,%2)])]
+
+@	F.SET.DUE
+@	Passed: %0 - vote id, %1 - time string
+@	Purpose: set due date
+&F.SET.DUE #18091=[if(t([setr(A,[convtime(%1)])]),[if(lt(%qA,secs()),[ansi(hw,VOTE:)]%bThat time occurs in the past.,[set(me,DATA_%0_DUE:%qA)][ansi(hw,VOTE:)]%bDue date on vote %0 set to %1)],[ansi(hw,VOTE:)]%b%1 is not a valid time string. See help convtime.)]
+
+@	F.SET.LOCK.BLOCKED
+@	Passed: %0 - Vote ID, %1 - pc to block
+@	Purpose: add a person to the blocked lock of a vote
+&F.SET.LOCK.BLOCKED #18091=[if(t(pmatch(%1)),[if(hasattr(me,LOCK_%0_BLOCKED),[if(member(xget(me,LOCK_%0_BLOCKED),pmatch(%1)),[set(me,LOCK_%0_BLOCKED:[setdiff(xget(me,LOCK_%0_BLOCKED),[pmatch(%1)])])][ansi(hw,VOTE:)]%bRemoved %1 from the list of blocked people on vote %0,[set(me,LOCK_%0_BLOCKED:[setunion(xget(me,LOCK_%0_BLOCKED),pmatch(%1))])][ansi(hw,VOTE:)]%bAdded %1 to list of blocked people for vote %0)],[set(me,LOCK_%0_BLOCKED:[pmatch(%1)])][ansi(hw,VOTE:)]%bAdded %1 to list of blocked people for vote %0)],[ansi(hw,VOTE:)]%b%1 doesn't match a player.)]
+
+@	F.SET.LOCK.ALLOWED
+@	Passed: %0 - vote id, %1 - pc to allow
+@	Purpose: add a person to the allowed list of a vote
+&F.SET.LOCK.ALLOWED #18091=[if(t(pmatch(%1)),[if(hasattr(me,LOCK_%0_ALLOWED),[if(member(xget(me,LOCK_%0_ALLOWED),pmatch(%1)),[set(me,LOCK_%0_ALLOWED:[setdiff(xget(me,LOCK_%0_ALLOWED),[pmatch(%1)])])][ansi(hw,VOTE:)]%bRemoved %1 from the list of allowed people on vote %0,[set(me,LOCK_%0_ALLOWED:[setunion(xget(me,LOCK_%0_ALLOWED),pmatch(%1))])][ansi(hw,VOTE:)]%bAdded %1 to list of allowed people for vote %0)],[set(me,LOCK_%0_ALLOWED:[pmatch(%1)])][ansi(hw,VOTE:)]%bAdded %1 to list of allowed people for vote %0)],[ansi(hw,VOTE:)]%b%1 doesn't match a player.)][set(me,LOCK_%0_UNLOCKED:)]
+
+@	F.SET.LOCK.FACTION
+@	Passed: %0 - vote id, %1 - faction to lock to
+@	Purpose: set the faction to lock a vote to
+&F.SET.LOCK.FACTION #18091=[if(hasattr(me,LOCK_%0_FACTION),[if(member(xget(me,LOCK_%0_FACTION),%1),[set(me,LOCK_%0_FACTION:[setdiff(xget(me,LOCK_%0_FACTION),%1)])][ansi(hw,VOTE:)]%bRemoved faction %1 from vote %0's faction lock,[set(me,LOCK_%0_FACTION:[setunion(xget(me,LOCK_%0_FACTION),%1)])][ansi(hw,VOTE:)]%bAdded faction %1 to vote %0's faction lock)],[set(me,LOCK_%0_FACTION:%1)])][if(hasattr(me,LOCK_%0_UNLOCKED),[set(me,LOCK_%0_UNLOCKED:)])]
+
+@	F.SET.LOCK.TEMPLATE
+@	Passed: %0 - vote id, %1 - template to lock to
+@	Purpose: set the template to lock a vote to
+&F.SET.LOCK.TEMPLATE #18091=[if(hasattr(me,LOCK_%0_TEMPLATE),[if(member(xget(me,LOCK_%0_TEMPLATE),%1),[set(me,LOCK_%0_TEMPLATE:[setdiff(xget(me,LOCK_%0_TEMPLATE),%1)])][ansi(hw,VOTE:)]%bRemoved template %1 from vote %0's template lock,[set(me,LOCK_%0_TEMPLATE:[setunion(xget(me,LOCK_%0_TEMPLATE),%1)])][ansi(hw,VOTE:)]%bAdded Template %1 to vote %0's template lock)],[set(me,LOCK_%0_TEMPLATE:%1)])][if(hasattr(me,LOCK_%0_UNLOCKED),[set(me,LOCK_%0_UNLOCKED:)])]
 
 @	CMD.VOTE.OPTIONS
 @	Passed: ID,Switch,Values
 @	Purpose: Add and Delete the choices for issues
-&CMD.VOTE.OPTIONS #18901=$+vote/opt */*=*:
+&CMD.VOTE.OPTIONS #18091=$+vote/opt */*=*:@assert [isstaff(%#)];@assert [and(t(%1),t(%2))]={@pemit %#=[ansi(hw,VOTE:)]%bYou didn't pass an ID or description.};@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bCouldn't find that vote ID};@pemit %#=[if(hasattr(me,OPTIONS_%0_[edit(%1,%b,_)]),[set(me,OPTIONS_%0_[edit(%1,%b,_)]:)][ansi(hw,VOTE:)]%bOption %1 removed from vote %0,[set(me,OPTIONS_%0_[edit(%1,%b,_)]:%2)][ansi(hw,VOTE:)]%bAdded option %1 to vote %0)]
 
 @	CMD.VOTE.VOTE
 @	Passed: ID, Option ID
 @	Purpose: Record vote on an issue
-&CMD.VOTE.VOTE #18901=$+vote *=*:
+&CMD.VOTE.VOTE #18091=$+vote *=*:@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bCan't find a vote under ID %0.};@assert [u(me/f.unlocked,%#)][member(%qG,%0)]={@pemit %#=[ansi(hw,VOTE:)]%bYou are not allowed to vote on ID %0.};@assert [hasattr(me,OPTIONS_%0_[edit(%1,%b,_)])]={@pemit %#=[ansi(hw,VOTE:)]%b%1 is not a valid option for ID %0.};@switch/first [hasattr(me,DATA_%0_VOTERS)]=0,[pemit(%#,[u(F.RECORD.VOTE.FIRST,%#,%0,%1)])],1,[pemit(%#,[u(F.RECORD.VOTE,%#,%0,%1)])]
+
+@	F.RECORD.VOTE.FIRST
+@	Passed: Player DBREF, ID, Option ID
+@	Purpose: Record first vote, set up attributes
+&F.RECORD.VOTE.FIRST #18091=[set(me,DATA_%1_VOTERS:%0)][set(me,DATA_%1_VOTES:[name(%0)]~%2)][set(me,DATA_%1_TALLY:%2~1)][set(me/DATA_%1_VOTES,Wizard)][ansi(hw,VOTE:)]%bYou have voted for option %2 on ID %1
+
+@	F.RECORD.VOTE
+@	Passed: Player DBREF, ID, Option ID
+@	Purpose: Record all votes past first and handle checks
+&F.RECORD.VOTE #18091=[setq(A,[member(xget(me,DATA_%1_VOTERS),%0)])][setq(B,[xget(me,DATA_%1_VOTES)])][setq(C,[xget(me,DATA_%1_TALLY)])][if(%qA,[ansi(hw,VOTE:)]%bYou have already voted on ID %1,[set(me,DATA_%1_VOTERS:[setunion(xget(me,DATA_%1_VOTERS),%0)])][set(me,DATA_%1_VOTES:[setunion(%qB,[name(%0)]~%2)])][iter(%qC,[if(strmatch(%i0,*%2*),[setq(D,[setunion(%qD,[extract(%i0,1,1,~)]~[inc(extract(%i0,2,1,~))])])],[setq(D,[setunion(%qD,%i0)])])], ,@@)][set(me,DATA_%1_TALLY:%qD)][ansi(hw,VOTE:)]%bYou have voted for option %2 on ID %1)]
 
 @	CMD.VOTE.STATS
 @	Passed: ID
 @	Purpose: Display number of voters and votes breakdown
-&CMD.VOTE.STATS #18901=$+vote/stats *:
-&CMD.VOTE.CLOSE #18901=$+vote/close *:
+&CMD.VOTE.STATS #18091=$+vote/stats *:@assert [isstaff(%#)];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bCan't find that ID.};@assert [hasattr(me,DATA_%0_VOTES)]={@pemit %#=[ansi(hw,VOTE:)]%bID %0 has no votes.};@pemit %#=[header(Vote %0)]%R%B[center([ansi(hw,< [extract(xget(me,VOTE_%0),1,1,|)] >)],77,[ansi(hx,-)])]%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,< VOTERS >)],77,[ansi(hx,-)])]%R[setq(A,1)][iter(xget(me,DATA_%0_VOTERS),[ljust([name(%i0)],30)][if(not(mod(%qA,2)),%R)][setq(A,[inc(%qA)])], ,@@)]%R%R%B[center([ansi(hw,< VOTES >)],77,[ansi(hx,-)])]%R[iter(xget(me,DATA_%0_TALLY),[ljust([ansi(hw,[extract(%i0,1,1,~)])],15)]%b-%b[ljust([xget(me,OPTIONS_%0_[extract(%i0,1,1,~)])],50)]%b[rjust([extract(%i0,2,1,~)],9)], ,%R)]%R[footer()]
+
+@	CMD.VOTE.CLOSE
+@	Passed: ID
+@	Purpose: Display number of voters and votes breakdown
+&CMD.VOTE.CLOSE #18091=$+vote/close *:@assert [isstaff(%#)];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bCouldn't find a vote under ID %0.};[setq(A,[center(Vote %0,78,=)]%R%B[center(< [extract(xget(me,VOTE_%0),1,1,|)] >,77,-)]%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center(< VOTERS >,77,-)]%R[itemize([iter(xget(me,DATA_%0_VOTERS),[name(%i0)], ,%B)])]%R%R%B[center(< VOTES >,77,-)]%R%R<table style="Border-collapse:separate;border-spacing:10px;"><tr><td>Option</td><td>Description</td><td>Votes</td></tr>[iter(xget(me,DATA_%0_TALLY),<tr><td>[extract(%i0,1,1,~)]</td><td>[xget(me,OPTIONS_%0_[extract(%i0,1,1,~)])]</td><td>[extract(%i0,2,1,~)]</td></tr>, ,@@)]</table>%R[repeat(=,78)])];[u(#5185/FN_SIMPLE_POST_NEW_TOPIC,Ourea,Vote,ID %0 - [extract(xget(me,VOTE_%0),1,1,|)],%qA)];[set(#19296,DATA_%0_VOTES:[xget(me,DATA_%0_VOTES)])][set(#19296/DATA_%0_VOTES,Wizard)][setq(B,[header(Vote %0)]%R%B[center([ansi(hw,< [extract(xget(me,VOTE_%0),1,1,|)] >)],77,[ansi(hx,-)])]%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,< VOTERS >)],77,[ansi(hx,-)])]%R[setq(A,1)][iter(xget(me,DATA_%0_VOTERS),[ljust([name(%i0)],30)][if(not(mod(%qA,2)),%R)][setq(A,[inc(%qA)])], ,@@)]%R%R%B[center([ansi(hw,< VOTES >)],77,[ansi(hx,-)])]%R[iter(xget(me,DATA_%0_TALLY),[ljust([ansi(hw,[extract(%i0,1,1,~)])],15)]%b-%b[ljust([xget(me,OPTIONS_%0_[extract(%i0,1,1,~)])],50)]%b[rjust([extract(%i0,2,1,~)],9)], ,%R)]%R[footer()])][u(#653/FN_BBPOST,109,Vote %0 Results,%qB)][iter(lattr(me/*_%0_*),[set(me,%i0:)], ,@@)][set(me,VOTE_%0:)];@pemit %#={[ansi(hw,VOTE:)]%bYou have closed Vote %0. Results posted to BB 109 and the Forum. Should individual's votes be needed ask a wizard.%R%R%qB}
 
 @	F.DISP.VOTES
 @	Passed: Player DBRef
 @	Returns: List of issues player has to vote on
-&F.DISP.VOTES #18901=[u(F.UNLOCKED,%0)][if(gt(words(%qf),0),[header([ansi(hw,VoteSys)])]%R[iter(%qF,[ljust(%i0,5)][ljust(xget(me,VOTE_##),72)][rjust([if(member(xget(me,DATA_##_VOTERS),%0),Y,N)],2)], ,%R)][footer()],[ansi(hw,VOTE:)]%bThere are currently no issues to vote on.)]
+&F.DISP.VOTES #18091=[u(F.UNLOCKED,%0)][if(gt(words(%qG),0),[header(VoteSys)]%R[ljust(ID,5)][ljust(TITLE,51)]%b[ljust(TIME REMAINING,19)]%R%b[repeat([ansi(nr,-)],76)]%b%R[iter(%qG,[ljust(%i0,5)][ljust(extract(xget(me,VOTE_##),1,1,|),51)]%b[ljust([if(hasattr(me,DATA_##_DUE),[u(#637/F.DATEDIFF,[xget(me,DATA_##_DUE)])],No Due Date)],19)][rjust([if(member(xget(me,DATA_##_VOTERS),%0),Y,N)],2)], ,%R)]%R[footer()],[ansi(hw,VOTE:)]%bThere are currently no issues to vote on.)]
 
 @	F.UNLOCKED
 @	Passed: Player DBRef
@@ -77,7 +131,14 @@
 @	C - List of Passed Blocked Locks (in this case, passed is bad because you were in the list of blocked people)
 @	D - List of Passed Faction Locks 
 @	E - List of Passed Template Locks
-@	F - Final List
-&F.UNLOCKED #18901=[setq(A,[lattr(me/LOCK*)])][iter(%qA,[switch([strmatch(%i0,*Blocked)][strmatch(%i0,*Allowed)][strmatch(%i0,*Faction)][strmatch(%i0,*Template)],1000,[if(member(xget(me,%i0),%0),[setq(C,[setunion(%qC,[extract(%i0,2,1,_)])])])],0100,[if(member(xget(me,%i0),%0),[setq(B,[setunion(%qB,[extract(%i0,2,1,_)])])])],0010,[if(isfaction?(%0,[xget(me,%i0)]),[setq(D,[setunion(%qD,[extract(%i0,2,1,_)])])])],0001,[if(strmatch(template(%0),[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i0,2,1,_)])])])], ,@)][setq(F,[setunion(%qB,%qD)])][setq(F,[setunion(%qF,%qE)])][setq(F,[setdiff(%qF,%qC)])]
+@	F - List of Unlocked Votes
+@	G - Final List
+&F.UNLOCKED #18091=[setq(A,[lattr(me/LOCK*)])][iter(%qA,[switch([strmatch(%i0,*Blocked)][strmatch(%i0,*Allowed)][strmatch(%i0,*Faction)][strmatch(%i0,*Template)][strmatch(%i0,*Unlocked)],10000,[if(member(xget(me,%i0),%0),[setq(C,[setunion(%qC,[extract(%i0,2,1,_)])])])],01000,[if(member(xget(me,%i0),%0),[setq(B,[setunion(%qB,[extract(%i0,2,1,_)])])])],00100,[if(gt(words(xget(me,%i0)),1),[iter(xget(me,%i0),[if(isfaction?(%0,%i0),[setq(D,[setunion(%qD,[extract(%i1,2,1,_)])])])], ,@@)],[setq(D,[setunion(%qD,[extract(%i0,2,1,_)])])])],00010,[if(gt(words(xget(me,%i0)),1),[iter(xget(me,%i0),[if(strmatch(template(%0),%i0),[setq(E,[setunion(%qE,[extract(%i1,2,1,_)])])])], ,@@)],[setq(E,[setunion(%qE,[extract(%i0,2,1,_)])])])],00001,[setq(F,[setunion(%qF,[extract(%i0,2,1,_)])])])], ,@@)][setq(G,[setunion(%qB,%qD)])][setq(G,[setunion(%qG,%qE)])][setq(G,[setunion(%qG,%qF)])][setq(G,[setdiff(%qG,%qC)])]
 
-&DATA.CID #18901=1
+
+@	LIT.INTER
+@	Passed: Title of Issue
+@	Returns: Intermission to display title
+&LIT.INTER #18091=%b[center([titlestr(%0)],76,[ansi(nr,-)])]%b
+
+&DATA.CID #18091=1
