@@ -439,7 +439,14 @@ e: stat with underscores
 		break apart input: [setr( m, u( f.input.break-apart, %0 ))]%r
 		put input into registers: %r%b %b
 			[iter( %qm, [inum( 0 )]: [setr( inum( 0 ), %i0 )], |, %r%b %b )]%r
-		category: %q1 %r
+		category: 
+			[setr( 1, 
+				switch( %q1, 
+					primal u*, 
+					primal-urge, 
+					%q1 
+				)
+			)] %r
 		stat: %q2 %r
 		type: %q3 %r
 		to value: %q4 %r
