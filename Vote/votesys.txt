@@ -40,7 +40,7 @@
 @	ACONNECT
 @	Passed: nothing
 @	Tell a player if they have votes
-@ACONNECT #18091=[u(F.UNLOCKED)][if(t(%qG),[setq(X,0)][iter(%qG,[if(not(member(xget(me,DATA_%i0_VOTERS),%#)),[setq(X,1)])], ,@)][if(%qX,[pemit(%#,[ansi(hw,VOTE:)]%bThere are currently issues to vote on. Please check +vote.)],[pemit(%#,[ansi(hw,VOTE:)]%bThere are currently no issues to vote on.)])],[pemit(%#,[ansi(hw,VOTE:)]%bThere are currently no issues to vote on.)])]
+@ACONNECT #18091=[u(F.UNLOCKED)][if(t(%qG),[setq(X,0)][iter(%qG,[if(not(member(xget(me,DATA_%i0_VOTERS),%#)),[setq(X,1)])], ,@)][if(%qX,[pemit(%#,[ansi(hw,VOTE:)]%bThere are currently issues to vote on. Please check +vote.)])])]
 
 @	CMD.VOTE 
 @	Passed: Nothing
@@ -50,7 +50,7 @@
 @	CMD.VOTE.VIEW
 @	Passed: Nothing
 @	Returns: View a specific issue
-&CMD.VOTE.VIEW #18091=$+vote *:@break [t(after(%0,=))];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bThat ID doesn't match any current vote.};@pemit %#=[header(Vote %0)]%R%B[center([ansi(hw,[extract(xget(me,VOTE_%0),1,1,|)])],77,[ansi(hx,-)])]%R%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,OPTIONS)],77,[ansi(hx,-)])]%R[iter(lattr(me/OPTIONS_%0*),[ljust([last(%i0,_)],25)][ljust([xget(me,%i0)],50)]%R, ,@@)]%R[footer()]
+&CMD.VOTE.VIEW #18091=$+vote *:@break [t(after(%0,=))];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bThat ID doesn't match any current vote.};@if [hasattr(me,DATA_%0_VIEWERS)]=[set(me,DATA_%0_VIEWERS:[setunion(xget(me,DATA_%0_VIEWERS),%#)])],[set(me,DATA_%0_VIEWERS:%#)][set(me/DATA_%0_VIEWERS,Wizard)];@pemit %#=[header(Vote %0)]%R%B[center([ansi(hw,[extract(xget(me,VOTE_%0),1,1,|)])],77,[ansi(hx,-)])]%R%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,OPTIONS)],77,[ansi(hx,-)])]%R[iter(lattr(me/OPTIONS_%0*),[ljust([last(%i0,_)],25)][ljust([xget(me,%i0)],50)]%R, ,@@)]%R[footer()]
 
 @	CMD.VOTE.ADD
 @	Passed: Title,Description
@@ -80,7 +80,7 @@
 @	F.SET.LOCK.FACTION
 @	Passed: %0 - vote id, %1 - faction to lock to
 @	Purpose: set the faction to lock a vote to
-&F.SET.LOCK.FACTION #18091=[if(hasattr(me,LOCK_%0_FACTION),[if(member(xget(me,LOCK_%0_FACTION),%1),[set(me,LOCK_%0_FACTION:[setdiff(xget(me,LOCK_%0_FACTION),%1)])][ansi(hw,VOTE:)]%bRemoved faction %1 from vote %0's faction lock,[set(me,LOCK_%0_FACTION:[setunion(xget(me,LOCK_%0_FACTION),%1)])][ansi(hw,VOTE:)]%bAdded faction %1 to vote %0's faction lock)],[set(me,LOCK_%0_FACTION:%1)])][if(hasattr(me,LOCK_%0_UNLOCKED),[set(me,LOCK_%0_UNLOCKED:)])]
+&F.SET.LOCK.FACTION #18091=[if(hasattr(me,LOCK_%0_FACTION),[if(member(xget(me,LOCK_%0_FACTION),%1),[set(me,LOCK_%0_FACTION:[setdiff(xget(me,LOCK_%0_FACTION),%1)])][ansi(hw,VOTE:)]%bRemoved faction %1 from vote %0's faction lock,[set(me,LOCK_%0_FACTION:[setunion(xget(me,LOCK_%0_FACTION),%1)])][ansi(hw,VOTE:)]%bAdded faction %1 to vote %0's faction lock)],[set(me,LOCK_%0_FACTION:%1)][ansi(hw,VOTE:)]%bAdded faction %1 to %0's faction lock)][if(hasattr(me,LOCK_%0_UNLOCKED),[set(me,LOCK_%0_UNLOCKED:)])]
 
 @	F.SET.LOCK.TEMPLATE
 @	Passed: %0 - vote id, %1 - template to lock to
@@ -95,27 +95,31 @@
 @	CMD.VOTE.VOTE
 @	Passed: ID, Option ID
 @	Purpose: Record vote on an issue
-&CMD.VOTE.VOTE #18091=$+vote *=*:@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bCan't find a vote under ID %0.};@assert [u(me/f.unlocked,%#)][member(%qG,%0)]={@pemit %#=[ansi(hw,VOTE:)]%bYou are not allowed to vote on ID %0.};@assert [hasattr(me,OPTIONS_%0_[edit(%1,%b,_)])]={@pemit %#=[ansi(hw,VOTE:)]%b%1 is not a valid option for ID %0.};@switch/first [hasattr(me,DATA_%0_VOTERS)]=0,[pemit(%#,[u(F.RECORD.VOTE.FIRST,%#,%0,%1)])],1,[pemit(%#,[u(F.RECORD.VOTE,%#,%0,%1)])]
+&CMD.VOTE.VOTE #18091=$+vote *=*:@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bCan't find a vote under ID %0.};@assert [u(me/f.unlocked,%#)][member(%qG,%0)]={@pemit %#=[ansi(hw,VOTE:)]%bYou are not allowed to vote on ID %0.};@assert [hasattr(me,OPTIONS_%0_[edit(before(%1,/),%b,_)])]={@pemit %#=[ansi(hw,VOTE:)]%b%1 is not a valid option for ID %0.};@switch/first [hasattr(me,DATA_%0_VOTERS)][t(after(%1,/))]=00,[pemit(%#,[u(F.RECORD.VOTE.FIRST,%#,%0,%1)])],10,[pemit(%#,[u(F.RECORD.VOTE,%#,%0,%1)])],01,[pemit(%#,[u(F.RECORD.VOTE.FIRST,%#,%0,[before(%1,/)],[after(%1,/)])])],11,[pemit(%#,[u(F.RECORD.VOTE,%#,%0,[before(%1,/)],[after(%1,/)])])]
 
 @	F.RECORD.VOTE.FIRST
-@	Passed: Player DBREF, ID, Option ID
+@	Passed: Player DBREF, ID, Option ID,Reason (Optional)
 @	Purpose: Record first vote, set up attributes
-&F.RECORD.VOTE.FIRST #18091=[set(me,DATA_%1_VOTERS:%0)][set(me,DATA_%1_VOTES:[name(%0)]~%2)][set(me,DATA_%1_TALLY:%2~1)][set(me/DATA_%1_VOTES,Wizard)][ansi(hw,VOTE:)]%bYou have voted for option %2 on ID %1
+&F.RECORD.VOTE.FIRST #18091=[if(hasattr(me,LOCK_%1_FACTION),[switch(xget(u(#637/FN_FIND_FACTION,[xget(me,LOCK_%1_FACTION)]),D.TYPE),family,FAMILY,OTHER FACTIONS)],[setq(S,0)])][set(me,DATA_%1_VOTERS:%0)][set(me,DATA_%1_VOTES:[name(%0)]~[if(t(%3),%2~%3,%2)])][set(me,DATA_%1_TALLY:%2~1[if(t(%qS),~%qS)])][set(me/DATA_%1_VOTES,Wizard)][pemit(#18188,%0 voted for %2 on %1.%RTally: [xget(me,DATA_%1_TALLY)])][ansi(hw,VOTE:)]%bYou have voted for option %2 on ID %1
 
 @	F.RECORD.VOTE
-@	Passed: Player DBREF, ID, Option ID
+@	Passed: Player DBREF, ID, Option ID,Reason (optional)
 @	Purpose: Record all votes past first and handle checks
-&F.RECORD.VOTE #18091=[setq(A,[member(xget(me,DATA_%1_VOTERS),%0)])][setq(B,[xget(me,DATA_%1_VOTES)])][setq(C,[xget(me,DATA_%1_TALLY)])][if(%qA,[ansi(hw,VOTE:)]%bYou have already voted on ID %1,[set(me,DATA_%1_VOTERS:[setunion(xget(me,DATA_%1_VOTERS),%0)])][set(me,DATA_%1_VOTES:[setunion(%qB,[name(%0)]~%2)])][iter(%qC,[if(strmatch(%i0,*%2*),[setq(D,[setunion(%qD,[extract(%i0,1,1,~)]~[inc(extract(%i0,2,1,~))])])],[setq(D,[setunion(%qD,%i0)])])], ,@@)][set(me,DATA_%1_TALLY:%qD)][ansi(hw,VOTE:)]%bYou have voted for option %2 on ID %1)]
+&F.RECORD.VOTE #18091=[setq(A,[member(xget(me,DATA_%1_VOTERS),%0)])][setq(B,[xget(me,DATA_%1_VOTES)])][setq(C,[xget(me,DATA_%1_TALLY)])][set(me,DATA_%1_VOTES:[setunion(%qB,[name(%0)]~[if(t(%3),%2~%3,%2)],|,|)])][iter(%qC,[if(strmatch(%i0,*%2*),[setq(D,[setunion(%qD,[extract(%i0,1,1,~)]~[inc(extract(%i0,2,1,~))])])][setq(X,1)],[setq(D,[setunion(%qD,%i0)])])], ,@@)][if(not(%qX),[setq(D,[setunion(%qD,%2~1)])])][if(t(%qA),[ansi(hw,VOTE:)]%bYou have already voted on Vote %1,[pemit(#18188,%0 voted for %2 on %1.%RTally: %qD%RRegister C: %qC%RX - %qX%RVariables: 0 - %0%R1 - %1%R2 - %2%R3 - %3)][set(me,DATA_%1_TALLY:%qD)][set(me,DATA_%1_VOTERS:[setunion(xget(me,DATA_%1_VOTERS),%0)])][ansi(hw,VOTE:)]%bYou have voted for option %2 on ID %1)]
 
 @	CMD.VOTE.STATS
 @	Passed: ID
 @	Purpose: Display number of voters and votes breakdown
-&CMD.VOTE.STATS #18091=$+vote/stats *:@assert [isstaff(%#)];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bCan't find that ID.};@assert [hasattr(me,DATA_%0_VOTES)]={@pemit %#=[ansi(hw,VOTE:)]%bID %0 has no votes.};@pemit %#=[header(Vote %0)]%R%B[center([ansi(hw,< [extract(xget(me,VOTE_%0),1,1,|)] >)],77,[ansi(hx,-)])]%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,< VOTERS >)],77,[ansi(hx,-)])]%R[setq(A,1)][iter(xget(me,DATA_%0_VOTERS),[ljust([name(%i0)],30)][if(not(mod(%qA,2)),%R)][setq(A,[inc(%qA)])], ,@@)]%R%R%B[center([ansi(hw,< VOTES >)],77,[ansi(hx,-)])]%R[iter(xget(me,DATA_%0_TALLY),[ljust([ansi(hw,[extract(%i0,1,1,~)])],15)]%b-%b[ljust([xget(me,OPTIONS_%0_[extract(%i0,1,1,~)])],50)]%b[rjust([extract(%i0,2,1,~)],9)], ,%R)]%R[footer()]
+&CMD.VOTE.STATS #18091=$+vote/stats *:@assert [isstaff(%#)];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bCan't find that ID.};@assert [hasattr(me,DATA_%0_VOTES)]={@pemit %#=[ansi(hw,VOTE:)]%bID %0 has no votes.};@if [hasattr(me,DATA_%0_VIEWERS)]=[set(me,DATA_%0_VIEWERS:[setunion(xget(me,DATA_%0_VIEWERS),%#)])],[set(me,DATA_%0_VIEWERS:%#)][set(me/DATA_%0_VIEWERS,Wizard)];@pemit %#=[header(Vote %0)]%R%B[center([ansi(hw,< [extract(xget(me,VOTE_%0),1,1,|)] >)],77,[ansi(hx,-)])]%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,< VOTERS >)],77,[ansi(hx,-)])]%R[setq(A,1)][iter(xget(me,DATA_%0_VOTERS),[ljust([name(%i0)],30)][if(not(mod(%qA,2)),%R)][setq(A,[inc(%qA)])], ,@@)]%R%R%B[center([ansi(hw,< VOTES >)],77,[ansi(hx,-)])]%R[iter(xget(me,DATA_%0_TALLY),[ljust([ansi(hw,[extract(%i0,1,1,~)])],15)]%b-%b[ljust([xget(me,OPTIONS_%0_[extract(%i0,1,1,~)])],50)]%b[rjust([extract(%i0,2,1,~)],9)], ,%R)]%R%R%b[center([ansi(hw,< WEIGHTED VOTES >)],77,[ansi(hx,-)])]%R[iter(xget(me,DATA_%0_VOTES),[setq(X,[pmatch(extract(%i0,1,1,~))])][setq(Y,[match(xget(%qX,_Merits),Family_Status*,|)])][setq(Z,[extract(extract(xget(%qX,_Merits),%qY,1,|),2,1,~)])][if(t(%qW),[setq(V,0)][iter(%qW,[if(strmatch(%i0,*[extract(%i1,2,1,~)]*),[setq(U,[setunion(%qU,[extract(%i0,1,1,~)]~[add(extract(%i0,2,1,~),%qZ)])])][setq(V,1)],[setq(U,[setunion(%qU,%i0)])])], ,@@)][if(not(%qV),[setq(U,[setunion(%qU,[extract(%i0,2,1,~)]~%qZ)])])][setq(W,%qU)][setq(U,[space(0)])],[setq(W,[extract(%i0,2,1,~)]~%qZ)])],|,@@)][iter(%qW,[ljust([ansi(hw,[extract(%i0,1,1,~)])],15)]%b-%b[ljust([xget(me,OPTIONS_%0_[extract(%i0,1,1,~)])],50)]%b[rjust([extract(%i0,2,1,~)],9)]%R, ,@@)]%R%B[center([ansi(hw,< REASONS >)],77,[ansi(hx,-)])]%R[iter([xget(me,DATA_%0_VOTES)],[if(t(extract(%i0,3,1,~)),[ljust(extract(%i0,2,1,~),10)] - [extract(%i0,3,1,~)]%R)],|,@@)]%R[footer()]
 
 @	CMD.VOTE.CLOSE
 @	Passed: ID
 @	Purpose: Display number of voters and votes breakdown
-&CMD.VOTE.CLOSE #18091=$+vote/close *:@assert [isstaff(%#)];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bCouldn't find a vote under ID %0.};[setq(A,[center(Vote %0,78,=)]%R%B[center(< [extract(xget(me,VOTE_%0),1,1,|)] >,77,-)]%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center(< VOTERS >,77,-)]%R[itemize([iter(xget(me,DATA_%0_VOTERS),[name(%i0)], ,%B)])]%R%R%B[center(< VOTES >,77,-)]%R%R<table style="Border-collapse:separate;border-spacing:10px;"><tr><td>Option</td><td>Description</td><td>Votes</td></tr>[iter(xget(me,DATA_%0_TALLY),<tr><td>[extract(%i0,1,1,~)]</td><td>[xget(me,OPTIONS_%0_[extract(%i0,1,1,~)])]</td><td>[extract(%i0,2,1,~)]</td></tr>, ,@@)]</table>%R[repeat(=,78)])];[u(#5185/FN_SIMPLE_POST_NEW_TOPIC,Ourea,Vote,ID %0 - [extract(xget(me,VOTE_%0),1,1,|)],%qA)];[set(#19296,DATA_%0_VOTES:[xget(me,DATA_%0_VOTES)])][set(#19296/DATA_%0_VOTES,Wizard)][setq(B,[header(Vote %0)]%R%B[center([ansi(hw,< [extract(xget(me,VOTE_%0),1,1,|)] >)],77,[ansi(hx,-)])]%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,< VOTERS >)],77,[ansi(hx,-)])]%R[setq(A,1)][iter(xget(me,DATA_%0_VOTERS),[ljust([name(%i0)],30)][if(not(mod(%qA,2)),%R)][setq(A,[inc(%qA)])], ,@@)]%R%R%B[center([ansi(hw,< VOTES >)],77,[ansi(hx,-)])]%R[iter(xget(me,DATA_%0_TALLY),[ljust([ansi(hw,[extract(%i0,1,1,~)])],15)]%b-%b[ljust([xget(me,OPTIONS_%0_[extract(%i0,1,1,~)])],50)]%b[rjust([extract(%i0,2,1,~)],9)], ,%R)]%R[footer()])][u(#653/FN_BBPOST,109,Vote %0 Results,%qB)][iter(lattr(me/*_%0_*),[set(me,%i0:)], ,@@)][set(me,VOTE_%0:)];@pemit %#={[ansi(hw,VOTE:)]%bYou have closed Vote %0. Results posted to BB 109 and the Forum. Should individual's votes be needed ask a wizard.%R%R%qB}
+&CMD.VOTE.CLOSE #18091=$+vote/close *:@assert [isstaff(%#)];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bCouldn't find a vote under ID %0.};[setq(A,[center(Vote %0,78,=)]%R%B[center(< [extract(xget(me,VOTE_%0),1,1,|)] >,77,-)]%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center(< VOTERS >,77,-)]%R[itemize([iter(xget(me,DATA_%0_VOTERS),[name(%i0)], ,%B)])]%R%R%B[center(< VOTES >,77,-)]%R%R<table style="Border-collapse:separate;border-spacing:10px;"><tr><td>Option</td><td>Description</td><td>Votes</td></tr>[iter(xget(me,DATA_%0_TALLY),<tr><td>[extract(%i0,1,1,~)]</td><td>[xget(me,OPTIONS_%0_[extract(%i0,1,1,~)])]</td><td>[extract(%i0,2,1,~)]</td></tr>, ,@@)]</table>%R[repeat(=,78)])];[u(#5185/FN_SIMPLE_POST_NEW_TOPIC,Ourea,Vote,ID %0 - [extract(xget(me,VOTE_%0),1,1,|)],%qA)];[set(#19296,DATA_%0_VOTES:[xget(me,DATA_%0_VOTES)])][set(#19296/DATA_%0_VOTES,Wizard)][set(#19296,DATA_%0_VIEWERS:[xget(me,DATA_%0_VIEWERS)])][set(#19296/DATA_%0_VIEWERS,Wizard)][setq(B,[header(Vote %0)]%R%B[center([ansi(hw,< [extract(xget(me,VOTE_%0),1,1,|)] >)],77,[ansi(hx,-)])]%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,< VOTERS >)],77,[ansi(hx,-)])]%R[setq(A,1)][iter(xget(me,DATA_%0_VOTERS),[ljust([name(%i0)],30)][if(not(mod(%qA,2)),%R)][setq(A,[inc(%qA)])], ,@@)]%R%R%B[center([ansi(hw,< VOTES >)],77,[ansi(hx,-)])]%R[iter(xget(me,DATA_%0_TALLY),[ljust([ansi(hw,[extract(%i0,1,1,~)])],15)]%b-%b[ljust([xget(me,OPTIONS_%0_[extract(%i0,1,1,~)])],50)]%b[rjust([extract(%i0,2,1,~)],9)], ,%R)]%R[footer()])][u(#653/FN_BBPOST,109,Vote %0 Results,%qB)][iter(lattr(me/*_%0_*),[set(me,%i0:)], ,@@)][set(me,VOTE_%0:)];@pemit %#={[ansi(hw,VOTE:)]%bYou have closed Vote %0. Results posted to BB 109 and the Forum. Should individual's votes be needed ask a wizard.%R%R%qB}
+
+%R%R<table style="Border-collapse:separate;border-spacing:10px;"><tr><td>Option</td><td>Description</td><td>Votes</td>
+
+[iter(xget(me,DATA_%0_VOTES),[setq(X,[pmatch(extract(%i0,1,1,~))])][setq(Y,[match(xget(%qX,_Merits),Family_Status*,|)])][setq(Z,[extract(extract(xget(%qX,_Merits),%qY,1,|),2,1,~)])][if(t(%qW),[setq(V,0)][iter(%qW,[if(strmatch(%i0,*[extract(%i1,2,1,~)]*),[setq(U,[setunion(%qU,[extract(%i0,1,1,~)]~[add(extract(%i0,2,1,~),%qZ)])])][setq(V,1)],[setq(U,[setunion(%qU,%i0)])])], ,@@)][if(not(%qV),[setq(U,[setunion(%qU,[extract(%i0,2,1,~)]~%qZ)])])][setq(W,%qU)][setq(U,[space(0)])],[setq(W,[extract(%i0,2,1,~)]~%qZ)])],|,@@)][iter(%qW,[ljust([ansi(hw,[extract(%i0,1,1,~)])],15)]%b-%b[ljust([xget(me,OPTIONS_%0_[extract(%i0,1,1,~)])],50)]%b[rjust([extract(%i0,2,1,~)],9)]%R, ,@@)]
 
 @	F.DISP.VOTES
 @	Passed: Player DBRef
@@ -133,21 +137,26 @@
 @	E - List of Passed Template Locks
 @	F - List of Unlocked Votes
 @	G - Final List
-&F.UNLOCKED #18091=[setq( A, lattr( me/LOCK_* ))][iter( %qA, u( f.unlocked.[last( %i0, _ )], %0 ), , @@ )][setq( G, setunion( %qB, %qD ))][setq( G, setunion( %qG, %qE ))][setq( G, setunion( %qG, %qF ))][setq( G, setdiff( %qG, %qC ))]
+<<<<<<< HEAD
+&F.UNLOCKED #18091=[setq( A, lattr( me/LOCK_* ))][iter( %qA, u( f.unlocked.[last( %i0, _ )], %0, %i0 ), , @@ )][setq( G, setunion( %qB, %qD ))][setq( G, setunion( %qG, %qE ))][setq( G, setunion( %qG, %qF ))][setq( G, setdiff( %qG, %qC ))]
+=======
+&F.UNLOCKED #18091=[setq(A,[lattr(me/LOCK*)])][iter(%qA,[switch([strmatch(%i0,*Blocked)][strmatch(%i0,*Allowed)][strmatch(%i0,*Faction)][strmatch(%i0,*Template)][strmatch(%i0,*Unlocked)],10000,[if(member(xget(me,%i0),%0),[setq(C,[setunion(%qC,[extract(%i0,2,1,_)])])])],01000,[if(member(xget(me,%i0),%0),[setq(B,[setunion(%qB,[extract(%i0,2,1,_)])])])],00100,[if(gt(words(xget(me,%i0)),1),[iter(xget(me,%i0),[if(isfaction?(%0,%i0),[setq(D,[setunion(%qD,[extract(%i1,2,1,_)])])])], ,@@)],[if(isfaction?(%0,[xget(me,%i0)]),[setq(D,[setunion(%qD,[extract(%i0,2,1,_)])])])])],00010,[if(gt(words(xget(me,%i0)),1),[iter(xget(me,%i0),[if(strmatch(template(%0),%i0),[setq(E,[setunion(%qE,[extract(%i1,2,1,_)])])])], ,@@)],[setq(E,[setunion(%qE,[extract(%i0,2,1,_)])])])],00001,[setq(F,[setunion(%qF,[extract(%i0,2,1,_)])])])], ,@@)][setq(G,[setunion(%qB,%qD)])][setq(G,[setunion(%qG,%qE)])][setq(G,[setunion(%qG,%qF)])][setq(G,[setdiff(%qG,%qC)])]
+
+>>>>>>> FETCH_HEAD
 
 @	F.UNLOCKED.<lock item>
 @	Passed: Player DBref
 @	Returns: Nothing; sets register for F.UNLOCKED, above
 
-&f.unlocked.blocked #18091=if( member( xget( me, %i0 ), %0 ), [setq( C, [setunion( %qC, [extract( %i0, 2, 1, _ )])])])
+&f.unlocked.blocked #18091=if( member( xget( me, %1 ), %0 ), [setq( C, [setunion( %qC, [extract( %1, 2, 1, _ )])])])
 
-&f.unlocked.allowed #18091=if( member( xget( me, %i0 ), %0 ), [setq( B, [setunion( %qB, [extract( %i0, 2, 1, _ )])])])
+&f.unlocked.allowed #18091=if( member( xget( me, %1 ), %0 ), [setq( B, [setunion( %qB, [extract( %1, 2, 1, _ )])])])
 
-&f.unlocked.faction #18091=if( gt( words( xget( me, %i0 )), 1 ), [iter( xget( me, %i0 ), [if( isfaction?( %0, %i0 ), [setq( D, [setunion( %qD, [extract( %i1, 2, 1, _ )])])])], , @@  )], [if( isfaction?( %0, xget( me, %i0 )), [setq( D, [setunion( %qD, [extract( %i0, 2, 1, _ )])])])])
+&f.unlocked.faction #18091=if( gt( words( xget( me, %1 )), 1 ), [iter( xget( me, %1 ), [if( isfaction?( %0, %i0 ), [setq( D, [setunion( %qD, [extract( %1, 2, 1, _ )])])])], , @@  )], [if( isfaction?( %0, xget( me, %1 )), [setq( D, [setunion( %qD, [extract( %1, 2, 1, _ )])])])])
 
-&f.unlocked.template #18091=if( gt( words( xget( me, %i0 )), 1 ), [iter( xget( me, %i0 ), [if( strmatch( template( %0 ), %i0 ), [setq( E, [setunion( %qE, [extract( %i1, 2, 1, _ )])])])], , @@  )], [if( strmatch( template( %0 ), xget( me, %i0 )), [setq( E, [setunion( %qE, [extract( %i0, 2, 1, _ )])])])])
+&f.unlocked.template #18091=if( gt( words( xget( me, %1 )), 1 ), [iter( xget( me, %1 ), [if( strmatch( template( %0 ), %i0 ), [setq( E, [setunion( %qE, [extract( %1, 2, 1, _ )])])])], , @@  )], [if( strmatch( template( %0 ), xget( me, %1 )), [setq( E, [setunion( %qE, [extract( %1, 2, 1, _ )])])])])
 
-&f.unlocked.unlocked #18091=setunion( %qF, [extract( %i0, 2, 1, _ )])
+&f.unlocked.unlocked #18091=setunion( %qF, [extract( %1, 2, 1, _ )])
 
 @	LIT.INTER
 @	Passed: Title of Issue
