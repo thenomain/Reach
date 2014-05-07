@@ -277,7 +277,7 @@ x: estimated xp cost
 --------------------------------------------------------------------------------
 -- DISPLAY: SPEND 'GENERAL' TRAIT ----------------------------------------------
 
-&DISPLAY.XP-SPEND.GENERAL XP Request Validation System <xrvs>=%r[ucstr( setr( e, edit( %0, _, %b )))] (general) %5 > %6%rXP Cost: %3[if( t( %4 ), %b%( expected %4%) )][if( t( %7 ), %r--%r%7)]%r%r[divider(staff commands)]%r%r[strcat(sheet/set %9/%0=, %6, if( t( %2 ), /%2 ))]%r[strcat(+xp/spend %9=, %3, :, if( %8, CHARGEN:%b ), [titlestr( %qe )], %b, %5 > %6)]%r
+&DISPLAY.XP-SPEND.GENERAL XP Request Validation System <xrvs>=%r[ucstr( setr( e, edit( %0, _, %b )))] (general) %5 > %6%rXP Cost: %3[if( t( %4 ), %b%(expected %4%) )][if( t( %7 ), %r--%r%7)]%r%r[divider(staff commands)]%r%r[strcat(sheet/set %9/%0=, %6, if( t( %2 ), /%2 ))]%r[strcat(+xp/spend %9=, %3, :, if( %8, CHARGEN:%b ), [titlestr( %qe )], %b, %5 > %6)]%r
 
 
 --------------------------------------------------------------------------------
@@ -292,8 +292,21 @@ x: estimated xp cost
 --------------------------------------------------------------------------------
 -- GET CURRENT STAT: GLOBAL ----------------------------------------------------
 
+Set & Passed as: "Potency". Looked up as: "Blood-Potency".
+Setting the exception here because it's easier than unravelling fp_stat, below.
+
+--
+
 &F.STATGET.GLOBAL XP Request Validation System <xrvs>=
-	result from stat(): [setr( i, stat( %0, %1 ))]
+	result from stat(): 
+	[setr( i, 
+		stat( %0, 
+			case( %1, 
+				Potency, Blood-Potency, 
+				%1 
+			)
+		)
+	)]
 
 
 --------------------------------------------------------------------------------
@@ -442,8 +455,9 @@ e: stat with underscores
 		category: 
 			[setr( 1, 
 				switch( %q1, 
-					primal u*, 
-					primal-urge, 
+					primal u*, primal-urge, 
+					blood p*, potency, 
+					blood-*, potency, 
 					%q1 
 				)
 			)] %r
