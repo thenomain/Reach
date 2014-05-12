@@ -295,6 +295,8 @@ x: estimated xp cost
 Set & Passed as: "Potency". Looked up as: "Blood-Potency".
 Setting the exception here because it's easier than unravelling fp_stat, below.
 
+Note to self: 'case()' is case-sensitive, and lookup usually returns lower-case
+
 --
 
 &F.STATGET.GLOBAL XP Request Validation System <xrvs>=
@@ -302,7 +304,7 @@ Setting the exception here because it's easier than unravelling fp_stat, below.
 	[setr( i, 
 		stat( %0, 
 			case( %1, 
-				Potency, Blood-Potency, 
+				potency, blood-potency, 
 				%1 
 			)
 		)
