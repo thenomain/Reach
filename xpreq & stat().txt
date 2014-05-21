@@ -49,7 +49,7 @@ x: estimated xp cost
 
 --
 
-&trig.process.normal XP Request Validation System <xrvs>=
+&trig.process.normal #14370=
 	think 
 		full stat: [setr( f, statfull( %3, %4 ))]; 
 
@@ -120,10 +120,24 @@ x: estimated xp cost
 @@ .. estimate xp value
 @@ .. check 'xp.<class>.<trait>' for exceptions, then 'xp.<class>'
 @@ .. (remember, for this system, some traits are considered classes)
+
 	think 
-		xp.[edit( %3, %b, _ )].%4: [edit( v( xp.[edit( %3, %b, _ )].%4 ), lit( %1 ), %qz, lit( %2 ), %1, lit( %3 ), %qv )]%r
-		xp.[edit( %3, %b, _ )]: [edit( v( xp.[edit( %3, %b, _ )] ), lit( %1 ), %qz, lit( %2 ), %1, lit( %3 ), %qv )]%r
-		estimated cost: [setr( x, 
+		xp.[edit( %3, %b, _ )].%4: 
+			[edit( 
+				v( xp.[edit( %3, %b, _ )].%4 ), 
+				lit( %1 ), %qz, 
+				lit( %2 ), %1, 
+				lit( %3 ), %qv 
+			)]%r
+		xp.[edit( %3, %b, _ )]: 
+			[edit( 
+				v( xp.[edit( %3, %b, _ )] ), 
+				lit( %1 ), %qz, 
+				lit( %2 ), %1, 
+				lit( %3 ), %qv 
+			)]%r
+		estimated cost: 
+			[setr( x, 
 				udefault( xp.[edit( %3, %b, _ )].%4, 
 					u( xp.[edit( %3, %b, _ )], 
 						%0, %qz, %1, %qv 
@@ -375,7 +389,7 @@ z: player's current value
 
 --
 
-&D.NO-VALUE.CLASSES XP Request Validation System <xrvs>=benediction devotion numina tactic
+&D.NO-VALUE.CLASSES XP Request Validation System <xrvs>=benediction devotion numina tactic gift
 
 &D.DONT-DISPLAY-LEVEL.CLASSES XP Request Validation System <xrvs>=benediction ceremonies devotion elixir gift goblin numina rite ritual rote tactic theban vestment
 
@@ -389,7 +403,7 @@ z: player's current value
 
 @pemit %0=You have requested '%qt' to the XP bucket for staff. Please allow for some time to process it.; 
 
-@trigger %!/trig.job.create=%0, %qt, %r%qd ;
+@trigger %!/trig.job.create=%0, %qt, %r%qd;
 
 
 --------------------------------------------------------------------------------
@@ -521,15 +535,25 @@ e: stat with underscores
 --------------------------------------------------------------------------------
 -- COMMAND: XP REQUEST WITH SWITCH ---------------------------------------------
 
-&CMD.XP_SWITCH XP Request Validation System <xrvs>=$^\+xpreq/([^ ]*)?([\s\S]*)?$:@assert cor( isapproved( %# ), setr( a, isapproved( %#, unapproved )))={ @pemit %#=Approved or unapproved players only. }; 
+&CMD.XP_SWITCH XP Request Validation System <xrvs>=
+	$^\+xpreq/([^ ]*)?([\s\S]*)?$:
+	
+	@assert cor( isapproved( %# ), setr( a, isapproved( %#, unapproved )))={ 
+		@pemit %#=Approved or unapproved players only. 
+	}; 
 
-@assert t( setr( s, lattr( %!/cmd.switch.%1* )))={ @pemit %#=No such switch. }; 
+	@assert t( setr( s, lattr( %!/cmd.switch.%1* )))={ 
+		@pemit %#=No such switch. 
+	}; 
 
-think switch: [setr( s, if( t( match( %qs, cmd.switch.%1 )), cmd.switch.%1, %qs ))]; 
+	think switch: 
+		[setr( s, if( t( match( %qs, cmd.switch.%1 )), cmd.switch.%1, %qs ))]; 
 
-@assert eq( words( %qs ), 1 )={ @pemit %#=Matches too many switches. }; 
+	@assert eq( words( %qs ), 1 )={ 
+		@pemit %#=Matches too many switches. 
+	}; 
 
-@trigger %!/%qs=%#, trim( %2 );
+	@trigger %!/%qs=%#, trim( %2 );
 
 --
 

@@ -361,7 +361,7 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 @@ -- mage
 &xp.gnosis #14370=u( f.cost.standard, 8, %1, %2 )
 &xp.arcanum #14370=u( f.cost.standard, 8, %1, %2 )
-&xp.rote #14370=u( f.cost.standard, 2, %1, %2 )
+&xp.rote #14370=u( f.cost.direct, 2, %1, %2 )
 
 @@ -- possessed
 &xp.vice-power #14370=u( f.cost.standard, 10, %1, %2 )
@@ -389,7 +389,12 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 
 @@ -- werewolf
 &xp.primal-urge #14370=u( f.cost.standard, 8, %1, %2 )
-&xp.gift #14370=case( template( %0 ), Werewolf, u( f.cost.standard, 7, %1, %2 ), Shifter, u( f.cost.direct, 5, %1, add( %2, max( 0, sub( %2, 3 )))), 0 )
+
+@@ 0: dbref
+@@ 1: qz, player's current value
+@@ 3: qv, expected value
+
+&xp.gift #14370=case( template( %0 ), Werewolf, u( f.cost.standard, 7, %1, %3 ), Shifter, u( f.cost.direct, 5, %1, add( %3, max( 0, sub( %3, 3 )))), 0 )
 
 &xp.gift.rituals_1 #14370=5
 &xp.gift.rituals_2 #14370=10
