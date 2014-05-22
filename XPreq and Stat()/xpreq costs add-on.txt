@@ -6,41 +6,41 @@ Whether or not this can be attained easily remains to be seen.
 
 -=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-
 
-
-&C.XP-COST.GUESS #14370=$+xpcost *:
-	@break strmatch( %0, *|* )={ 
-		@pemit %#=You can't use the | character in this command. 
+&CMD.SWITCH.COST #14370=
+	@break strmatch( %1, *|* )={ 
+		@pemit %0=You can't use the | character in this command. 
 	}; 
 
 	think 
-		break apart input: [setr( m, u( f.input.break-apart, %0 ))]%r
+		break apart input: [setr( m, u( f.input.break-apart, %1 ))]%r
 		put input into registers: %r%b %b
 			[iter( %qm, [inum( 0 )]: [setr( inum( 0 ), %i0 )], |, %r%b %b )]%r
 		category: 
 			[setr( 1, 
 				switch( %q1, 
-					primal u*, 
-					primal-urge, 
+					primal u*, primal-urge, 
+					blood p*, potency, 
+					blood-*, potency, 
 					%q1 
 				)
 			)] %r
 		stat: %q2 %r
 		type: %q3 %r
 		to value: %q4 %r
-		cost: %q5 %r
+		cost requested: %q5 %r
 		notes: %q6 %r
-		in chargen?: [setr( a, isapproved( %#, unapproved ))];
+		in chargen?: [setr( a, isapproved( %0, unapproved ))];
 
-	@assert cor( isapproved( %# ), %qa )={ 
-		@pemit %#=Approved or unapproved players only. 
+	@assert cor( isapproved( %0 ), %qa )={ 
+		@pemit %0=Approved or unapproved players only. 
 	}; 
 
 	@assert t( statnum( sheetset, %qc ))={ 
-		@pemit %#=I can't find sheet category '%qc'. 
+		@pemit %0=I can't find sheet category '%qc'. 
 	}; 
 
 	@assert eq( words( rest( setr( i, mall( sheetset, %q1 )) , : )), 1 )={ 
-		@pemit %#=Category: %qi 
+		@pemit %0=Category: %qi 
 	}; 
 
 	think 
@@ -58,7 +58,7 @@ Whether or not this can be attained easily remains to be seen.
 
 	@trigger %!/trig.xp-cost.
 		[if( strmatch( %qc, specialty ), specialty, normal )]=
-		%#, 
+		%0, 
 		%q4, 
 		%q6, 
 		%qc, 
@@ -68,10 +68,8 @@ Whether or not this can be attained easily remains to be seen.
 		%qa;
 
 
+
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-
-
 
 
 --
@@ -94,8 +92,6 @@ z: player's current value for trait, via u( f.statget )
 v: costs allowed for this trait (not xp costs, but valid levels)
 
 x: estimated xp cost
-
-Currently works only with 'normal' traits, not global nor specialties. 
 
 --
 
@@ -125,10 +121,11 @@ Currently works only with 'normal' traits, not global nor specialties.
 @@ .. get stat's current value
 
 	think 
-		u( f.statget, 
-			if( not( %qf ), global, normal), 
+		[u( f.statget, 
+			if( not( %qf ), global, normal ), 
 			%0, %3, setr( t, %5 ), %qf 
-		); 
+		)]%r
+		trait values: [setr( v, u( f.list.costs, %qf ))]; 
 	
 	@assert 
 		if( 
@@ -137,14 +134,14 @@ Currently works only with 'normal' traits, not global nor specialties.
 			1, 
 @@ .. .. yeah, I can't remember what this is doing
 			or( 
-				t( match( cat( setr( v, u( f.list.costs, %qf )), 0 ), %1 )), 
+				t( match( cat( %qv, 0 ), %1 )), 
 				cand( strmatch( %qv, ), isint( %1 ), gte( %1, 0 ))
 			)
 		)={ 
 			@pemit %0=
 				if( strmatch( %qv, ), 
 					I was expecting the new value to be a positive integer., 
-					I was expecting a new value of: [itemize( %qv, , or )] 
+					That %3 can only be set to: [itemize( %qv, , or )] 
 				) 
 		}; 
 
@@ -154,7 +151,10 @@ Currently works only with 'normal' traits, not global nor specialties.
 			strmatch( %1, ), 
 			1 
 		)={ 
-			@pemit %0=[capstr( %3 )]s cannot be set to a value. 
+			@pemit %0=
+				[capstr( %3 )]
+				[if( strmatch( %3, *s ), e )]s 
+				cannot be set to a value. 
 		}; 
 
 	@assert 
@@ -166,41 +166,75 @@ Currently works only with 'normal' traits, not global nor specialties.
 @@ .. estimate xp value
 @@ .. check 'xp.<class>.<trait>' for exceptions, then 'xp.<class>'
 @@ .. (remember, for this system, some traits are considered classes)
+
 	think 
-		cost: [setr( x, 
+		xp.[edit( %3, %b, _ )].%4: 
+			[edit( 
+				v( xp.[edit( %3, %b, _ )].%4 ), 
+				lit( %1 ), %qz, 
+				lit( %2 ), %1, 
+				lit( %3 ), %qv 
+			)]%r
+		xp.[edit( %3, %b, _ )]: 
+			[edit( 
+				v( xp.[edit( %3, %b, _ )] ), 
+				lit( %1 ), %qz, 
+				lit( %2 ), %1, 
+				lit( %3 ), %qv 
+			)]%r
+		estimated cost: 
+			[setr( x, 
 				udefault( xp.[edit( %3, %b, _ )].%4, 
-					u( xp.[edit( %3, %b, _ )], %0, %qz, %1 ), 
+					u( xp.[edit( %3, %b, _ )], 
+						%0, %qz, %1, %qv 
+					), 
 					%0, 
 					%qz, 
 					%1, 
-					%qv  
+					%qv 
 				)
-			)]; 
+			)]%r
+		new requested cost: 
+			[setr( r, if( 
+				strmatch( %6, ), 
+				%qx, 
+				%6 
+			))]; 
 
 	@break eq( %qx, 0 )={ 
-		@pemit %0=You cannot '+xpreq %qf' because its cost is recorded as 0. 
+		@pemit %0=You cannot '+xpreq 
+		[if( t( %qf ), %qf, first( %qi, : ))][if( t( %5 ), :%5 )]' 
+		because its cost is recorded as 0. 
 		Try: +xpreq/job <title>=<request>
+	}; 
+
+@@ .. cost requested has to make sense
+	@assert cand( isint( %qr ), gt( %qr, 0 ))={ 
+		@pemit %0=XP costs must be set to a positive integer value. 
+		[if( strmatch( %qr , */* ), You may be thinking of our old format. )]
 	}; 
 
 @@ >> Display Results
 @@ .. if xp spent =/= xp cost, needs a reason/explanation
-	@break cand( neq( %6, %qx ), not( strlen( %2 )))={ 
-		@pemit %0=Cost: I think getting 
-		'[if( t( %qf ), %qf, first( %qi, : ))][if( t( %5 ), %b%(%5%))]' 
-		[if( strlen( %1 ), to %1%b)]
-		costs %qx xp. 
-		You put in %6 xp with no explanation for the difference.
-	}; 
+	@pemit %0=
+		[u( display.xp-cost.all, 
+			[if( t( %qf ), %qf, first( %qi, : ))][if( t( %5 ), %b%(%5%))], 
+			%qz, 
+			%1, 
+			%qr, 
+			%qx, 
+			%2 
+		)]; 
 
-	@pemit %0=Cost: I think getting 
-	'[if( t( %qf ), %qf, first( %qi, : ))][if( t( %5 ), %b%(%5%))]' 
-	[if( strlen( %1 ), to %1%b)]
-	costs %qx xp. 
-	You put in %6 xp with notes of '%2'.
+
 
 
 
 -=--=-=-=-=-=-=-=-=-=-=
+
+
+
+---
 
 &TRIG.XP-COST.SPECIALTY #14370=
 	think 
@@ -219,7 +253,13 @@ Currently works only with 'normal' traits, not global nor specialties.
 					[statnum( skill, %qf )]:%qt 
 				)
 			)] %r
-		specialty cost: [setr( x, u( xp.skill.specialty, %0, 0, 1 ))]; 
+		specialty cost: [setr( x, u( xp.skill.specialty, %0, 0, 1 ))]%r
+		new requested cost: 
+			[setr( r, if( 
+				strmatch( %6, ), 
+				%qx, 
+				%6 
+			))]; 
 
 	@assert cand( t( %4 )), t( %5 ))={ 
 		@pemit %0=You must give me both a skill and a specialty. 
@@ -237,23 +277,53 @@ Currently works only with 'normal' traits, not global nor specialties.
 		@pemit %0=You already have the %qf specialty '[edit( %qt, _, %b )]'. 
 	}; 
 
-	@@ <<<--- Also in trig.process.normal --->>>; 
-
-	@assert cand( isint( %6 ), gt( %6, 0 ))={ 
-		@pemit %0=Unadjusted costs must be set to a positive integer value. 
+@@ .. cost requested has to make sense
+	@assert cand( isint( %qr ), gt( %qr, 0 ))={ 
+		@pemit %0=XP costs must be set to a positive integer value. 
+		[if( strmatch( %qr , */* ), You may be thinking of our old format. )]
 	}; 
 
-
-@@ >> Display Results
 @@ .. if xp spent =/= xp cost, needs a reason/explanation
-	@break cand( neq( %6, %qx ), not( strlen( %2 )))={ 
-		@pemit %0=Cost: I think getting 
-		'%qf.%qt' costs %qx xp. You put in %6 xp with a reason of '%2'.
-		You put in %6 xp with no explanation for the difference.
-	}; 
+	@pemit %0=
+		[u( display.xp-cost.all, %qf.%qt, @@(from), @@(to), %qr, %qx, %2 )]; 
 
-	@pemit %0=Cost: I think getting 
-	'%qf.%qt' costs %qx xp. You put in %6 xp with a reason of '%2'.
+
+-=-=-=-=-=-=-==--=-=-=
+
+Display +xpreq/cost results.
+
+0: stat
+1: from
+2: to
+3: requested xp
+4: calculated xp
+5: reason
+
+--
+
+&display.xp-cost.all #14370=
+	[ansi( h, +xpreq/cost )]: I think getting '%0' 
+	[if( strlen( %2 ), 
+		from %1 
+		to %2%b 
+	)]
+	costs %4 xp. 
+	[if( neq( %3, %4 ), 
+		You want it for %3 xp
+		[if( t( strlen( %5 )), 
+			.,  
+			%bbut gave no explanation for the difference. 
+		)]
+	)] 
+	[if( t( strlen( %5 )), 
+		Reason: %5 
+	)]
+
+
+
+
+
+
 
 
 
@@ -356,7 +426,7 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 &xp.psyche #14370=u( f.cost.standard, 8, %1, %2 )
 &xp.manifestations #14370=u( f.cost.standard, 6, %1, %2 )
 &xp.key #14370=10
-&xp.ceremonies #14370=u( f.cost.standard, 8, %1, %2 )
+&xp.ceremonies #14370=u( f.cost.direct, 3, %1, %2 )
 
 @@ -- mage
 &xp.gnosis #14370=u( f.cost.standard, 8, %1, %2 )
