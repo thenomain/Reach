@@ -563,3 +563,7 @@ Affinity Gift[6] / Rituals	 New Dots x 5
 Non-Affinity Gift[6]	 New Dots x 7
 Primary Renown	 New Dots x 6
 Other Renown	 New Dots x 8
+
+** Numina
+
+Numina are skipped because they're limited and treated differently all across the board.
