@@ -1,0 +1,144 @@
+Inherited: bloodline, path, seeming, etc.
+Social: the others
+
+axis( <player>, inherited|chosen )
+- Checks the character's template, pulls their inherited (bloodline) or social
+ (clan) attribute
+
+axis( list )
+axis( )
+- lists the list of listing
+
+axis( list, <template> )
+- lists just for that template
+
+
+--------------------------------------------------------------------------------
+-- DATA: Chracter Axises -------------------------------------------------------
+
+&DATA.AXISES #89= 
+	:Inherited/Chosen|
+	Beastkin:Breed/|
+@@	Blood_Bather:/|
+	Body_Thief:/Club|
+	Changeling:Seeming/Court|
+	Demon:Incarnation/Agenda|
+@@	Eternal:/|
+	Fae-Touched:Seeming/|
+	Geist:Threshold/Archetype|
+	Ghoul:Clan/Covenant|
+@@	Harvester:/|
+	Hunter:Conspiracy/|
+@@	Immortal:/|
+	Mage:Path/Order|
+@@	Mortal:/|
+@@	Patchwork_People:/|
+	Possessed:Primary-Vice/| -- STOCKTON
+	Proximus:Path/Order|
+@@	Psychic:/|
+@@	Purified:/|
+@@	Reborn:/|
+	Shifter:Breed/Accord|
+@@	Slasher:x/y| -- Hunter, not used, ignoring
+	Sleepwalker:/Order|
+	Thaumaturge:/Path|
+	Vampire:Clan/Covenant|
+@@	Visitor:/|
+@@	Warden:/|
+@@	Wolfblooded:/|
+	Werewolf:Auspice/Tribe
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: Axis --------------------------------------------------------------
+
+Determines the axis of a player, or lists what it knows.
+
+0: player dbref or 'list'
+1: if player: 'inherited|supernatural' or 'social|chosen' or 'both'
+   if 'list': template
+
+--
+
+&fp_axis #978=
+	case( 1, 
+		cor( strmatch( %0, ), strmatch( %0, list )), 
+		if( strlen( %1 ), 
+			if( t( setr( l, grab( get( #89/data.axises ), %1*, | ))), 
+				%ql, 
+				#-1 TEMPLATE NOT FOUND OR HAS NO AXISES 
+			), 
+			rest( get( #89/data.axises ), | )
+		), 
+
+		not( 
+			cor( 
+				isstaff( owner( %@ )), 
+				strmatch( num( %0 ), %@ )
+			)
+		), 
+		#-1 PERMISSION DENIED, 
+
+		not( istype( %0, PLAYER )), 
+		#-1 PLAYER NOT FOUND, 
+
+		not( setr( a, 
+			grab( 
+				|inherited:1|supernatural:1|social:2|chosen:2|both:1 2, 
+				%1*, 
+				| 
+			)
+		)), 
+		#-1 AXIS NOT FOUND, 
+
+		strcat( 
+			setq( x, 
+				elements( 
+					rest( 
+						grab( 
+							get( #89/data.axises ), 
+							[template( %0 )]:*/*, 
+							| 
+						), 
+						: 
+					), 
+					rest( %qa, : ), 
+					/, / 
+				)
+			), 
+			case( words( %qx, / ), 
+				0, 
+				#-1 NO [ucstr( first( %qa, : ))] FOR TEMPLATE, 
+@@ one axis
+				1, 
+				case( 0, 
+					t( %qx ), 
+					#-1 TEMPLATE DOES NOT USE THAT AXIS, 
+					t( setr( s, stat( %0, %qx ))), 
+					[capstr( %qx )]:, 
+					%qs
+				), 
+@@ both axises: don't be so chatty
+				iter( %qx, 
+					case( 0, 
+						t( %i0 ), 
+						#-1 NO 
+						[ucstr( 
+							elements( INHERITED SOCIAL, inum() )
+						)], 
+						t( setr( s, stat( %0, %i0 ))), 
+						[capstr( %i0 )]:, 
+						%qs 
+					), 
+					/, 
+					|
+				)
+			)
+		)
+	)
+
+
+--------------------------------------------------------------------------------
+
+think u( #978/fp_axis, *thenomain, social )
+think axis( *thenomain, social )
