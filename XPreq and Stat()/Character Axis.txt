@@ -14,39 +14,57 @@ axis( list, <template> )
 
 
 --------------------------------------------------------------------------------
--- DATA: Chracter Axises -------------------------------------------------------
+-- DATA: Character Axises ------------------------------------------------------
 
-&DATA.AXISES #89= 
-	:Inherited/Chosen|
-	Beastkin:Breed/|
-@@	Blood_Bather:/|
-	Body_Thief:/Club|
-	Changeling:Seeming/Court|
-	Demon:Incarnation/Agenda|
-@@	Eternal:/|
-	Fae-Touched:Seeming/|
-	Geist:Threshold/Archetype|
-	Ghoul:Clan/Covenant|
-@@	Harvester:/|
-	Hunter:Conspiracy/|
-@@	Immortal:/|
-	Mage:Path/Order|
-@@	Mortal:/|
-@@	Patchwork_People:/|
-	Possessed:Primary-Vice/| -- STOCKTON
-	Proximus:Path/Order|
-@@	Psychic:/|
-@@	Purified:/|
-@@	Reborn:/|
-	Shifter:Breed/Accord|
-@@	Slasher:x/y| -- Hunter, not used, ignoring
-	Sleepwalker:/Order|
-	Thaumaturge:/Path|
-	Vampire:Clan/Covenant|
-@@	Visitor:/|
-@@	Warden:/|
-@@	Wolfblooded:/|
-	Werewolf:Auspice/Tribe
+axis.<sphere>.inherited|.social
+
+ulocal() these:
+
+--
+
+&axis.body_thief.social #89=stat( %0, Club )
+
+&axis.changeling.inherited #89=stat( %0, Seeming )
+&axis.changeling.social #89=stat( %0, Court )
+
+&axis.demon.inherited #89=stat( %0, Incarnation )
+&axis.demon.social #89=stat( %0, Agenda )
+
+&axis.fae-touched.inherited #89=stat( %0, Seeming )
+
+&axis.geist.inherited #89=stat( %0, Threshold )
+&axis.geist.social #89=stat( %0, Archetype )
+
+&axis.ghoul.inherited #89=if( 
+		setr( i, stat( setr( r, pmatch( get( %0/_REGENT ))), Bloodline )), 
+		%qi, 
+		stat( %qr, Clan )
+	)
+&axis.ghoul.social #89=stat( pmatch( get( %0/_REGENT )), Covenant )
+
+&axis.hunter.inherited #89=stat( %0, Consipracy )
+
+&axis.mage.inherited #89=stat( %0, Path )
+&axis.mage.social #89=stat( %0, Order )
+
+&axis.possessed.inherited #89=stat( %0, Primary-Vice )
+
+&axis.proximus.inherited #89=stat( %0, Path )
+&axis.proximus.social #89=stat( %0, Order )
+
+&axis.shifter.inherited #89=elements( stat( %0, Species ), 1 2, : )
+&axis.shifter.social #89=stat( %0, Accord )
+
+&axis.sleepwalker.social #89=stat( %0, Order )
+
+&axis.thaumaturge.social #89=stat( %0, Path )
+
+&axis.vampire.inherited #89=if( 
+		setr( i, stat( %0, Bloodline )), 
+		%qi, 
+		stat( %0, Clan )
+	)
+&axis.vampire.social #89=stat( %0, Covenant )
 
 
 --------------------------------------------------------------------------------
@@ -62,14 +80,10 @@ Determines the axis of a player, or lists what it knows.
 
 &fp_axis #978=
 	case( 1, 
-		cor( strmatch( %0, ), strmatch( %0, list )), 
-		if( strlen( %1 ), 
-			if( t( setr( l, grab( get( #89/data.axises ), %1*, | ))), 
-				%ql, 
-				#-1 TEMPLATE NOT FOUND OR HAS NO AXISES 
-			), 
-			rest( get( #89/data.axises ), | )
-		), 
+
+		strmatch( %0, ),
+		I know the following templates: 
+		[iter( lattr( ), elements( %i0, 2, . ))], 
 
 		not( 
 			cor( 
@@ -79,64 +93,39 @@ Determines the axis of a player, or lists what it knows.
 		), 
 		#-1 PERMISSION DENIED, 
 
-		not( istype( %0, PLAYER )), 
+		not( istype( %0, PLAYER )),
 		#-1 PLAYER NOT FOUND, 
 
+@@ .. 'inherited|supernatural', 'social|chosen', 'both'
 		not( setr( a, 
 			grab( 
-				|inherited:1|supernatural:1|social:2|chosen:2|both:1 2, 
+				|inherited:inherited
+				|supernatural:inherited
+				|social:social
+				|chosen:social
+				|both:inherited social, 
 				%1*, 
 				| 
 			)
 		)), 
 		#-1 AXIS NOT FOUND, 
 
-		strcat( 
-			setq( x, 
-				elements( 
-					rest( 
-						grab( 
-							get( #89/data.axises ), 
-							[template( %0 )]:*/*, 
-							| 
-						), 
-						: 
-					), 
-					rest( %qa, : ), 
-					/, / 
-				)
-			), 
-			case( words( %qx, / ), 
-				0, 
-				#-1 NO [ucstr( first( %qa, : ))] FOR TEMPLATE, 
-@@ one axis
-				1, 
+@@ .. do it
+		strcat(
+			setq( t, template( %0 )), 
+
+			iter( rest( %qa, : ), 
 				case( 0, 
-					t( %qx ), 
-					#-1 TEMPLATE DOES NOT USE THAT AXIS, 
-					t( setr( s, stat( %0, %qx ))), 
-					[capstr( %qx )]:, 
+					hasattr( #89/axis.%qt.%i0 ), 
+				#-1 NO [ucstr( %i0 )] FOR [capstr( %qt )], 
+					t( setr( s, ulocal( #89/axis.%qt.%i0, %0 ))), 
+					#-1 [ucstr( %i0 )] NOT SET, 
 					%qs
 				), 
-@@ both axises: don't be so chatty
-				iter( %qx, 
-					case( 0, 
-						t( %i0 ), 
-						#-1 NO 
-						[ucstr( 
-							elements( INHERITED SOCIAL, inum() )
-						)], 
-						t( setr( s, stat( %0, %i0 ))), 
-						[capstr( %i0 )]:, 
-						%qs 
-					), 
-					/, 
-					|
-				)
+				, |
 			)
 		)
 	)
-
 
 --------------------------------------------------------------------------------
 
