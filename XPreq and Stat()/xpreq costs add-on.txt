@@ -397,11 +397,70 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 &xp.willpower #14370=0
 &xp.power_trait #14370=u( f.cost.standard, 8, %1, %2 )
 
+
 @@ -- changeling
 &xp.wyrd #14370=u( f.cost.standard, 8, %1, %2 )
 &xp.contract #14370=u( f.cost.standard, 6, %1, %2 )
 &xp.goblin #14370=u( f.cost.direct, 3, %1, %2 )
 &xp.merit.token_limb #14370=u( f.cost.standard, 3, %1, %2 )
+
+@@ -- changeling: affinity, universal
+&xp.contract.dream #14370=u( f.cost.standard, 4, %1, %2 )
+&xp.contract.hearth #14370=u( f.cost.standard, 4, %1, %2 )
+&xp.contract.mirror #14370=u( f.cost.standard, 4, %1, %2 )
+&xp.contract.smoke #14370=u( f.cost.standard, 4, %1, %2 )
+&xp.contract.board #14370=u( f.cost.standard, 4, %1, %2 )
+&xp.contract.omen #14370=u( f.cost.standard, 4, %1, %2 )
+&xp.contract.moon #14370=u( f.cost.standard, 4, %1, %2 )
+&xp.contract.hours #14370=u( f.cost.standard, 4, %1, %2 )
+&xp.contract.lucidity #14370=u( f.cost.standard, 4, %1, %2 )
+&xp.contract.wild #14370=u( f.cost.standard, 4, %1, %2 )
+&xp.contract.thorns_and_brambles #14370=u( f.cost.standard, 4, %1, %2 )
+
+@@ -- changeling: affinity, seeming
+@@ -- fang & talon , communion and elements are done in a way that this code 
+@@ -- cannot (yet) reconcile
+
+&xp.contract.animation #14370=u( f.cost.contract.seeming, %0, %1, %2, wizened )
+&xp.contract.artiface #14370=u( f.cost.contract.seeming, %0, %1, %2, wizened )
+&xp.contract.communion #14370=u( f.cost.contract.seeming, %0, %1, %2, elemental )
+&xp.contract.communion_(fire) #14370=u( f.cost.contract.seeming, %0, %1, %2, elemental baswenaazhi )
+&xp.contract.darkness #14370=u( f.cost.contract.seeming, %0, %1, %2, darkling )
+&xp.contract.den #14370=u( f.cost.contract.seeming, %0, %1, %2, beast )
+&xp.contract.fang_and_talon #14370=u( f.cost.contract.seeming, %0, %1, %2, beast )
+&xp.contract.forge #14370=u( f.cost.contract.seeming, %0, %1, %2, wizened )
+&xp.contract.oath_and_punishment #14370=u( f.cost.contract.seeming, %0, %1, %2, ogre )
+&xp.contract.reflection #14370=u( f.cost.contract.seeming, %0, %1, %2, fairest )
+&xp.contract.separation #14370=u( f.cost.contract.seeming, %0, %1, %2, fairest )
+&xp.contract.shade_and_spirit #14370=u( f.cost.contract.seeming, %0, %1, %2, darkling )
+&xp.contract.stone #14370=u( f.cost.contract.seeming, %0, %1, %2, ogre )
+&xp.contract.vainglory #14370=u( f.cost.contract.seeming, %0, %1, %2, fairest )
+&xp.contract.wild #14370=u( f.cost.contract.seeming, %0, %1, %2, beast elemental )
+
+@@ -- changeling: affinity, court
+
+&xp.contract.verdant_spring #14370=u( f.cost.contract.court, %0, %1, %2, spring )
+&xp.contract.fleeting_spring #14370=u( f.cost.contract.court, %0, %1, %2, spring )
+&xp.contract.eternal_spring #14370=u( f.cost.contract.court, %0, %1, %2, spring )
+
+&xp.contract.punishing_summer #14370=u( f.cost.contract.court, %0, %1, %2, summer baswenaazhi )
+&xp.contract.eternal_summer #14370=u( f.cost.contract.court, %0, %1, %2, summer )
+&xp.contract.fleeting_summer #14370=u( f.cost.contract.court, %0, %1, %2, summer )
+
+&xp.contract.spellbound_autumn #14370=u( f.cost.contract.court, %0, %1, %2, autumn )
+&xp.contract.eternal_autumn #14370=u( f.cost.contract.court, %0, %1, %2, autumn )
+&xp.contract.fleeting_autumn #14370=u( f.cost.contract.court, %0, %1, %2, autumn )
+
+&xp.contract.sorrow-frozen_heart #14370=u( f.cost.contract.court, %0, %1, %2, winter waawaazisii )
+&xp.contract.eternal_winter #14370=u( f.cost.contract.court, %0, %1, %2, winter )
+&xp.contract.fleeting_winter #14370=u( f.cost.contract.court, %0, %1, %2, winter )
+
+&xp.contract.potential #14370=u( f.cost.contract.court, %0, %1, %2, dawn )
+
+&xp.contract.entropy #14370=u( f.cost.contract.court, %0, %1, %2, dusk )
+
+&xp.contract.four_directions #14370=u( f.cost.contract.court, %0, %1, %2, north south east west waawaazisii )
+
 
 @@ -- changing breeds
 
@@ -410,8 +469,10 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 &xp.favor #14370=u( f.cost.standard, 7, %1, %2 )
 &xp.renown #14370=u( f.cost.standard, case( template( %0 ), Shifter, 6, Werewolf, 8, 0 ), %1, %2 )
 
+
 @@ -- cultist
 &xp.cult-rite #14370=u( f.cost.standard, 2, %1, %2 )
+
 
 @@ -- hunter
 &xp.benediction #14370=5
@@ -422,16 +483,31 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 @@ .. tactics are never bought with xp and are beyond the scope
 &xp.tactic #14370=0
 
+
 @@ -- geist
 &xp.psyche #14370=u( f.cost.standard, 8, %1, %2 )
 &xp.manifestations #14370=u( f.cost.standard, 6, %1, %2 )
 &xp.key #14370=10
 &xp.ceremonies #14370=u( f.cost.direct, 3, %1, %2 )
 
+
 @@ -- mage
 &xp.gnosis #14370=u( f.cost.standard, 8, %1, %2 )
 &xp.arcanum #14370=u( f.cost.standard, 8, %1, %2 )
 &xp.rote #14370=u( f.cost.direct, 2, %1, %2 )
+
+&xp.arcanum.death #14370=u( f.cost.arcanum, %0, %1, %2, moros, obrimos )
+&xp.arcanum.fate #14370=u( f.cost.arcanum, %0, %1, %2, acanthus,  )
+&xp.arcanum.forces #14370=u( f.cost.arcanum, %0, %1, %2, obrimos, acanthus )
+&xp.arcanum.life #14370=u( f.cost.arcanum, %0, %1, %2, thyrsus,  )
+&xp.arcanum.matter #14370=u( f.cost.arcanum, %0, %1, %2, moros, mastigos )
+&xp.arcanum.mind #14370=u( f.cost.arcanum, %0, %1, %2, mastigos, thyrsus )
+&xp.arcanum.prime #14370=u( f.cost.arcanum, %0, %1, %2, obrimos,  )
+&xp.arcanum.space #14370=u( f.cost.arcanum, %0, %1, %2, mastigos,  )
+&xp.arcanum.spirit #14370=u( f.cost.arcanum, %0, %1, %2, thyrsus, moros )
+&xp.arcanum.time #14370=u( f.cost.arcanum, %0, %1, %2, acanthus,  )
+
+
 
 @@ -- possessed
 &xp.vice-power #14370=u( f.cost.standard, 10, %1, %2 )
@@ -445,7 +521,10 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 @@ -- vampire
 @@ &xp.blood-potency #14370=u( f.cost.standard, 8, %1, %2 )
 &xp.potency #14370=u( f.cost.standard, 8, %1, %2 )
-&xp.discipline #14370=u( f.cost.standard, case( template( %0 ), Vampire, 7, Ghoul, 14, 0 ), %1, %2 )
+&xp.discipline #14370=u( f.cost.discipline.<template>, %1, %2 )
+
+
+u( f.cost.standard, case( template( %0 ), Vampire, 7, Ghoul, 14, 0 ), %1, %2 )
 &xp.discipline.cruac #14370=u( f.cost.standard, 7, %1, %2 )
 &xp.discipline.coil_of_banes #14370=u( f.cost.standard, 8, %1, %2 )
 &xp.discipline.coil_of_blood #14370=u( f.cost.standard, 8, %1, %2 )
@@ -499,6 +578,48 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 
 @@ for changing breed "aspects"
 &f.cost.no-phantom-dots #14370=ladd( iter( setinter( %3, lnum( inc(%1), %2 )), mul( %0, %i0 )))
+
+
+================================================================================
+== AFFINITY CHECKS =============================================================
+
+0: player dbref
+1: axis' trait to match (seeming, bloodline, etc.)
+2: axis to match (inherited or chosen)
+returns: 1 if true
+
+--
+
+&f.has-affinity #14370=
+	t( setinter( 
+		lcstr( last( axis( %0, %2 ), : )), 
+		%1 
+	))
+
+
+--------------------------------------------------------------------------------
+-- Affinity costs for specific spheres and axii --------------------------------
+
+&f.cost.contract.seeming #14370=u( f.cost.standard, add( 6, mul( -2, u( f.has-affinity, %0, %3, inherited ))), %1, %2 )
+
+&f.cost.contract.court #14370=u( f.cost.standard, add( 6, mul( -2, u( f.has-affinity, %0, %3, chosen ))), %1, %2 )
+
+&f.cost.arcanum #14370=
+	u( f.cost.standard, 
+		add( 
+			7, 
+			mul( -1, u( f.has-affinity, %0, %3, inherited )), 
+			mul( 1, u( f.has-affinity, %0, %4, inherited ))
+		), 
+		%1, 
+		%2 
+	)
+
+&f.cost.discipline #14370=u( f.cost.discipline.[template( %0) ], )
+
+&f.cost.discipline.ghoul #14370=u( f.cost.standard, add( 14, mul( -4, u( f.has-affinity, %0, %3, inherited ))), %1, %2 )
+
+&f.cost.discipline.vampire #14370=u( f.cost.standard, add( 7, mul( -2, u( f.has-affinity, %0, %3, inherited ))), %1, %2 )
 
 
 ================================================================================
@@ -567,3 +688,129 @@ Other Renown	 New Dots x 8
 ** Numina
 
 Numina are skipped because they're limited and treated differently all across the board.
+
+=-=-=--=-=-==-
+
+LIST_CLAN: 
+
+Daeva: Celerity, Majesty, Vigor
+Gangrel: Animalism, Protean, Resilience
+Mekhet: Auspex, Celerity, Obfuscate
+Nosferatu: Nightmare, Obfuscate, Vigor
+Ventrue: Animalism, Dominate, Resilience
+
+
+-=-=-=-=-=-=-=
+LIST_BLOODLINE: 
+
+Adrestoi
+Adroanzi
+Agonistes
+Ahemait
+Alucinor
+Amara_Havana
+Angustri
+Annunaku
+Anvari
+Apollinaire
+Architect_of_the_Monolith
+Architects_of_the_Monolith
+Asnam
+Azerkatil
+Baddacelli
+Bak-Ra
+Barjot
+Bohagande
+Bron
+Brothers_of_Ypres
+Bruja
+Burakumin
+Calacas
+Californian_Xiao
+Canda_Bhanu
+Caporetti
+Carnival
+Carnon
+Childer_of_the_Morrigan
+Children_of_Judas
+Children_of_the_Phoenix
+Cimitiere
+Corajoso
+Csalad
+Csejthe
+Dead_Wolves
+Deucalion
+Dragolescu
+Duchagne
+Empusae
+En
+Erzsebet
+Eupraxus
+Galloi
+Geheim
+Gethsemani
+Gorgons
+Gulikan
+Hollow_Bloodline
+Hounds_of_Actaeon
+Icarians
+Iltani
+Kallisti
+Khaibit
+Kinnaree
+Kuufukuji
+Larvae
+Les_Gens_Libres
+Libitinarius
+Licinii
+Lygos
+Lynx
+Mabry
+Macellarius
+Malintzin
+Malkavian
+Malkovian
+Malocusians
+Mara
+Mayarap
+Melissidae
+Mnemosyne
+Morbus
+Moroi
+Morotrophians
+Mortifiers_of_the_Flesh
+Mystikoi
+Naditu
+Nahualli
+Nelapsi
+Nepheshim
+Noctuku
+Noktuku
+None
+Norvegi
+Oberlochs
+Order_of_Sir_Martin
+Osites
+Players
+Qedeshah
+Rakshasa
+Rotgrafen
+Sangiovanni
+Septemi
+Shepherds
+Sons_of_Cade
+Sotoha
+Spina
+Sta-Au
+Taifa
+Telamones
+The_Cockscomb_Society
+The_Mara
+Therion
+Tianpan_Xiao
+Tismanu
+Toreador
+Usiri
+Vedma
+Yagnatia
+Zelani
