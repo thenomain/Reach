@@ -33,11 +33,12 @@ w: who connected is in that sphere?
 
 @@ because we also use 'feral' and 'shifter' to describe 'changing breeds'
 @@ (aren't you just special, changing breeds)
+@@ ('fae' -> 'changeling' because 'cha' would cause 'multiple match' error)
 		%rValid Spheres:, 
 		setr( v, 
 			[lcstr( 
 				iter( get( #978/list_spheres ), first( %i0, : ), |, | )
-			)]|feral|shifter
+			)]|feral|shifter|fae
 		), 
 
 		%rStaffer's Spheres:, 
@@ -57,10 +58,17 @@ w: who connected is in that sphere?
 		@pemit %#=No such sphere. 
 	}; 
 
-@@ thanks again, changing breeds
+@@ sphere-alias correction because we are nice. so nice.
 	think cat( 
 		Really Chosen Sphere:, 
-		setr( c, if( t( match( feral shifter, %qc )), changing breeds, %qc)), 
+		setr( c, 
+			case( %qc, 
+				feral, changing breeds, 
+				shifter, changing breeds, 
+				fae, changeling, 
+				%qc
+			)
+		), 
 	); 
 		
 	@assert cor( 
