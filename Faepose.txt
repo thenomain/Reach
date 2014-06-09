@@ -30,7 +30,7 @@ fp <stuff>
 		Message:, setr( m, u( f.say-what, %#, %1, %2 )), 
 		%rWhere:, setr( w, loc( %# )), 
 		%rWho:, setr( w, lcon( %qw, PLAYER )), 
-		%rFilter:, setr( f, fil( filter.cansee, %qw, , , %! ))
+		%rFilter:, setr( f, filter( fil.cansee, %qw, , , %! ))
 	); 
 
 	@pemit %qf=ansi( xh, %[faepose%], n, %b%qm); 
