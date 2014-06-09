@@ -51,6 +51,7 @@ x: estimated xp cost
 
 &trig.process.normal #14370=
 	think 
+		who: %0%r
 		full stat: [setr( f, statfull( %3, %4 ))]; 
 
 @@ .. validate trait category and trait 
@@ -125,24 +126,33 @@ x: estimated xp cost
 		xp.[edit( %3, %b, _ )].%4: 
 			[edit( 
 				v( xp.[edit( %3, %b, _ )].%4 ), 
-				lit( %1 ), %qz, 
-				lit( %2 ), %1, 
-				lit( %3 ), %qv 
+				lit( %0 ), %0, 
+				lit( %1 ), %qf, 
+				lit( %2 ), %qz, 
+				lit( %3 ), %1, 
+				lit( %4 ), %qv 
 			)]%r
 		xp.[edit( %3, %b, _ )]: 
 			[edit( 
 				v( xp.[edit( %3, %b, _ )] ), 
-				lit( %1 ), %qz, 
-				lit( %2 ), %1, 
-				lit( %3 ), %qv 
+				lit( %0 ), %0, 
+				lit( %1 ), %qf, 
+				lit( %2 ), %qz, 
+				lit( %3 ), %1, 
+				lit( %4 ), %qv 
 			)]%r
 		estimated cost: 
 			[setr( x, 
 				udefault( xp.[edit( %3, %b, _ )].%4, 
 					u( xp.[edit( %3, %b, _ )], 
-						%0, %qz, %1, %qv 
+						%0, 
+						%qf, 
+						%qz, 
+						%1, 
+						%qv 
 					), 
 					%0, 
+					%qf, 
 					%qz, 
 					%1, 
 					%qv 
