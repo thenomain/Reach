@@ -59,6 +59,9 @@ ulocal() these:
 
 &axis.thaumaturge.social #89=stat( %0, Path )
 
+&axis.werewolf.inherited #89=stat( %0, Auspice )
+&axis.werewolf.social #89=stat( %0, Tribe )
+
 &axis.vampire.inherited #89=if( 
 		setr( i, stat( %0, Bloodline )), 
 		%qi, 
