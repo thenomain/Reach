@@ -144,12 +144,7 @@
 @	E - List of Passed Template Locks
 @	F - List of Unlocked Votes
 @	G - Final List
-<<<<<<< HEAD
-&F.UNLOCKED #18091=[setq( A, lattr( me/LOCK_* ))][iter( %qA, u( f.unlocked.[last( %i0, _ )], %0, %i0 ), , @@ )][setq( G, setunion( %qB, %qD ))][setq( G, setunion( %qG, %qE ))][setq( G, setunion( %qG, %qF ))][setq( G, setdiff( %qG, %qC ))]
-=======
-@	H - Staff Final List
 &F.UNLOCKED #18091=[setq(A,[lattr(me/LOCK*)])][iter(%qA,[switch([strmatch(%i0,*Blocked)][strmatch(%i0,*Allowed)][strmatch(%i0,*Faction)][strmatch(%i0,*Template)][strmatch(%i0,*Unlocked)],10000,[if(member(xget(me,%i0),%0),[setq(C,[setunion(%qC,[extract(%i0,2,1,_)])])])],01000,[if(member(xget(me,%i0),%0),[setq(B,[setunion(%qB,[extract(%i0,2,1,_)])])])],00100,[if(gt(words(xget(me,%i0)),1),[iter(xget(me,%i0),[if(isfaction?(%0,%i0),[setq(D,[setunion(%qD,[extract(%i1,2,1,_)])])])], ,@@)],[if(isfaction?(%0,[xget(me,%i0)]),[setq(D,[setunion(%qD,[extract(%i0,2,1,_)])])])])],00010,[if(gt(words(xget(me,%i0)),1),[iter(xget(me,%i0),[if(strmatch(template(%0),[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i1,2,1,_)])])],[if(isstaff(%0),[if(match([edit([u(#13181/F.DETERMINE.SPLAT,%0)],Feral,Shifter)],[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i0,2,1,_)])])])])])], ,@@)],[if(strmatch(template(%0),[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i0,2,1,_)])])],[if(isstaff(%0),[if(match([edit([u(#13181/F.DETERMINE.SPLAT,%0)],FERAL,Shifter)],[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i0,2,1,_)])])])])])])],00001,[setq(F,[setunion(%qF,[extract(%i0,2,1,_)])])])], ,@@)][setq(G,[setunion(%qB,%qD)])][setq(G,[setunion(%qG,%qE)])][setq(G,[setunion(%qG,%qF)])][setq(G,[setdiff(%qG,%qC)])][if(isstaff(%0),[iter(%qA,[setq(H,[setunion(%qH,extract(%i0,2,1,_))])], ,@@)])]
->>>>>>> ff10cc0ce2c3b88d7cc3d8a5cadd86d581d4a5d6
 
 @	F.UNLOCKED.<lock item>
 @	Passed: Player DBref
