@@ -17,6 +17,7 @@ s: staffer's spheres
 c: chosen sphere (matched)
 m: message for after Announcement:
 w: who connected is in that sphere?
+a: actual, matched sphere
 
 --
 
@@ -42,7 +43,7 @@ w: who connected is in that sphere?
 		), 
 
 		%rStaffer's Spheres:, 
-		setr( s, lcstr( edit( grep( #99, V_DEPT_*, %# ), V_DEPT_, ))), 
+		setr( s, lcstr( edit( grep( #99, V_DEPT_*, %# ), V_DEPT_, , %b, | ))), 
 		
 		%rChosen Sphere:, 
 		setr( c, graball( lcstr( %qv ), lcstr( %q0* ), | )), 
@@ -68,11 +69,14 @@ w: who connected is in that sphere?
 				fae, changeling, 
 				%qc
 			)
-		), 
+		),
+
+		%rActually Matches:, 
+		setr( a, grab( setinter( %qv, %qs, | ), %qc*, | ))
 	); 
-		
+
 	@assert cor( 
-		grab( setinter( %qv, %qs, | ), %q0*, | ), 
+		t( %qa ), 
 		hasflag( %#, WIZARD )
 	)={ 
 		@pemit %#=You must be a staffer for that sphere, or a wizard. 
@@ -93,7 +97,6 @@ w: who connected is in that sphere?
 
 	@pemit/list %qw=
 		[titlestr( edit( %qc, _, %b ))] Announcement: %qm; 
-
 
 --
 
