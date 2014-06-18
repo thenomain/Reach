@@ -1,0 +1,116 @@
+A project so that people can use @wall but only for their particular sphere.
+
+Don't let people @spherewall to other spheres.
+Unless Wizard. Wizards can do whatever anyway.
+
+
+
+================================================================================
+== @SPHEREWALL =================================================================
+
+@spherewall <sphere>=[:;]<message>
+
+--
+
+v: valid spheres
+s: staffer's spheres
+c: chosen sphere (matched)
+m: message for after Announcement:
+w: who connected is in that sphere?
+a: actual, matched sphere
+
+--
+
+&cmd.spherewall #99=$@spherewall *:
+	@assert isstaff( %# )={ 
+		@pemit %#=Staff Only. 
+	}; 
+
+	think cat( 
+		Target Sphere:, setr( 0, first( %0, = )), 
+		%rTarget Message:, 
+			regmatch( rest( %0, = ), (.)(.*), 1 1 2 ), -->, 
+			%q1%q2,  
+
+@@ because we also use 'feral' and 'shifter' to describe 'changing breeds'
+@@ (aren't you just special, changing breeds)
+@@ ('fae' -> 'changeling' because 'cha' would cause 'multiple match' error)
+		%rValid Spheres:, 
+		setr( v, 
+			[lcstr( 
+				iter( get( #978/list_spheres ), first( %i0, : ), |, | )
+			)]|feral|shifter|fae
+		), 
+
+		%rStaffer's Spheres:, 
+		setr( s, lcstr( edit( grep( #99, V_DEPT_*, %# ), V_DEPT_, , %b, | ))), 
+		
+		%rChosen Sphere:, 
+		setr( c, graball( lcstr( %qv ), lcstr( %q0* ), | )), 
+
+	); 
+
+	@assert eq( words( %qc, | ), 1 )={ 
+		@pemit %#=Too many choices. Matches: 
+			[iter( %qc, titlestr( %i0 ), |, %,%b )] 
+	}; 
+
+	@assert cor( strmatch( %0, ), t( %qc ))={ 
+		@pemit %#=No such sphere. 
+	}; 
+
+@@ sphere-alias correction because we are nice. so nice.
+	think cat( 
+		Really Chosen Sphere:, 
+		setr( c, 
+			case( %qc, 
+				feral, changing breeds, 
+				shifter, changing breeds, 
+				fae, changeling, 
+				%qc
+			)
+		),
+
+		%rActually Matches:, 
+		setr( a, grab( setinter( %qv, %qs, | ), %qc*, | ))
+	); 
+
+	@assert cor( 
+		t( %qa ), 
+		hasflag( %#, WIZARD )
+	)={ 
+		@pemit %#=You must be a staffer for that sphere, or a wizard. 
+	}; 
+
+	think cat( 
+		Message:, 
+		setr( m, u( f.shoutwhat, %#, %q1, %q2 )), 
+
+		%rWho Connected is In That Sphere:, 
+		setr( w, 
+			filter( filter.in-sphere, 
+				lwho(), @@(in), @@(out), %qc 
+			)
+		), 
+
+	); 
+
+	@pemit/list %qw=
+		[titlestr( edit( %qc, _, %b ))] Announcement: %qm; 
+
+--
+
+&f.shoutwhat #99=
+	strcat( 
+		name( %0 ), 
+		switch( %1, 
+			:*, %b%2, 
+			;*, %2, 
+			%bshouts%, “%1%2” 
+		)
+	)
+
+--
+
+&filter.in-sphere #99=cor( strmatch( sphere( %0 ), %1 ), isstaff( %0 ))
+

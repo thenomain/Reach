@@ -1,0 +1,786 @@
+--------------------------------------------------------------------------------
+-- SETUP -----------------------------------------------------------------------
+
+@set XP Request Validation System <xrvs>=INHERIT SAFE
+
+@rxlevel XP Request Validation System <xrvs>=All
+@txlevel XP Request Validation System <xrvs>=All
+
+&D.JOBS-SYSTEM XP Request Validation System <xrvs>=#2530
+&D.JOBS-DATABASE XP Request Validation System <xrvs>=#2564
+
+@@ For ajobs' job searches, %0: dbref of player to search
+&D.RECENT.XP-JOBS XP Request Validation System <xrvs>=
+	bucket=XP & source=%0 & opened<=7d
+
+@@ Regmatch for splitting up: +xpreq <foo>
+&D.REGMATCH.XPREQ XP Request Validation System <xrvs>=
+	(.*?)( to (.*?))? for (.*)
+
+@parent XP Request Validation System <xrvs>=#2833
+&PREFIX.DISPLAY XP Request Validation System <xrvs>=display.
+
+@Desc XP Request Validation System <xrvs>=This object does some minimal processing on xp spend requests before adding them to the player's most recent XP bucket job, unless that job was opened more than a week ago then it creates a new one. ( ex %!/d.recent.xp-jobs )%r%rSome trait classes require values, some don't. Those that don't (besides specialties, which are handled differently) are listed here: ex %!/d.no-value.classes %r%rWarning: Some of this is working in spite of using registers in @trigger calls. I'm not cleaning it up, but someone in the future may want to. - Theno
+
+
+--------------------------------------------------------------------------------
+-- TRIGGER: PROCESS NORMAL TRAITS ----------------------------------------------
+
+0: enactor (%#)
+1: to-value
+2: notes
+3: trait category
+4: stat/trait with underscores
+5: type (instance)
+6: requested cost
+7: 1 if unapproved
+
+f: full stat name (for partial-name matching)
+u: templates that are allowed access
+i: temp register, via u( f.statget )
+t: type / instance (%5), or replaced via u( f.statget )
+z: player's current value for trait, via u( f.statget )
+v: values allowed for this trait (not xp costs, but valid levels)
+a: actual value being set to ("actual" for no-value classes)
+
+r: requested xp cost
+x: estimated xp cost
+
+
+--
+
+&trig.process.normal #14370=
+	think 
+		who: %0%r
+		full stat: [setr( f, statfull( %3, %4 ))]; 
+
+@@ .. validate trait category and trait 
+
+	@assert t( statnum( %3, %4 ))={ 
+		@pemit %0=I can't find the [lcstr( %3 )] '[edit( %4, _, %b )]'. 
+	}; 
+
+	@assert isrepeat( %3, %4 )={ 
+		@pemit %0=[titlestr( %3 )]: [mall( %3, %4 )] 
+	}; 
+
+	@assert 
+		cor( 
+			match( setr( u, default( #2681/access-%4, all )), all ), 
+			strmatch( template( %0 ), %qu )
+		)={ 
+			@pemit %0=The trait '%qf' is only for the template(s) 
+			[itemize( %qu )]. 
+	}; 
+
+@@ .. get stat's current value
+
+	think 
+		[u( f.statget, 
+			if( not( %qf ), global, normal ), 
+			%0, %3, setr( t, %5 ), %qf 
+		)]%r
+		trait values: [setr( v, u( f.list.costs, %qf ))]; 
+	
+	@assert 
+		if( 
+@@ .. .. skip this check on classes that don't take values
+			t( match( v( d.no-value.classes ), %3 )), 
+			1, 
+@@ .. .. yeah, I can't remember what this is doing
+			or( 
+				t( match( cat( %qv, 0 ), %1 )), 
+				cand( strmatch( %qv, ), isint( %1 ), gte( %1, 0 ))
+			)
+		)={ 
+			@pemit %0=
+				if( strmatch( %qv, ), 
+					I was expecting the new value to be a positive integer., 
+					That %3 can only be set to: [itemize( %qv, , or )] 
+				) 
+		}; 
+
+	@assert 
+		if( 
+			t( match( v( d.no-value.classes ), %3 )), 
+			strmatch( %1, ), 
+			1 
+		)={ 
+			@pemit %0=
+				[capstr( %3 )]
+				[if( strmatch( %3, *s ), e )]s 
+				cannot be set to a value. 
+		}; 
+
+	@assert 
+		cor( gt( %1, %qz ), strmatch( %1, ))={ 
+			@pemit %0=The trait's new value of '%1' must be higher than its 
+			current value of '%qz'. 
+	}; 
+
+@@ .. estimate xp value
+@@ .. check 'xp.<class>.<trait>' for exceptions, then 'xp.<class>'
+@@ .. (remember, for this system, some traits are considered classes)
+
+	think 
+		xp.[edit( %3, %b, _ )].%4: 
+			[edit( 
+				v( xp.[edit( %3, %b, _ )].%4 ), 
+				lit( %0 ), %0, 
+				lit( %1 ), %qf, 
+				lit( %2 ), %qz, 
+				lit( %3 ), %1, 
+				lit( %4 ), %qv 
+			)]%r
+		xp.[edit( %3, %b, _ )]: 
+			[edit( 
+				v( xp.[edit( %3, %b, _ )] ), 
+				lit( %0 ), %0, 
+				lit( %1 ), %qf, 
+				lit( %2 ), %qz, 
+				lit( %3 ), %1, 
+				lit( %4 ), %qv 
+			)]%r
+		estimated cost: 
+			[setr( x, 
+				udefault( xp.[edit( %3, %b, _ )].%4, 
+					u( xp.[edit( %3, %b, _ )], 
+						%0, 
+						%qf, 
+						%qz, 
+						%1, 
+						%qv 
+					), 
+					%0, 
+					%qf, 
+					%qz, 
+					%1, 
+					%qv 
+				)
+			)]%r
+		new requested cost: 
+			[setr( r, if( 
+				strmatch( %6, ), 
+				%qx, 
+				%6 
+			))]; 
+
+	@break eq( %qx, 0 )={ 
+		@pemit %0=You cannot '+xpreq 
+		[if( t( %qf ), %qf, first( %qi, : ))][if( t( %5 ), :%5 )]' 
+		because its cost is recorded as 0. 
+		Try: +xpreq/job <title>=<request>
+	}; 
+
+@@ .. cost requested has to make sense
+	@assert cand( isint( %qr ), gt( %qr, 0 ))={ 
+		@pemit %0=XP costs must be set to a positive integer value. 
+		[if( strmatch( %qr , */* ), You may be thinking of our old format. )]
+	}; 
+
+@@ >> Display Results
+@@ .. if xp spent =/= xp cost, needs a reason/explanation
+	@break cand( neq( %qr, %qx ), not( strlen( %2 )))={ 
+		@pemit %0=Cost: I think getting 
+		'[if( t( %qf ), %qf, first( %qi, : ))][if( t( %5 ), %b%(%5%))]' 
+		[if( strlen( %1 ), to %1%b)]
+		costs %qx xp. 
+		You put in %qr xp with no explanation for the difference.
+	}; 
+
+	@pemit %0=
+		[wheader( Buying: [u( display.job-title, %3, %qf, %qt, %qz, %1 )] )]%r
+		[setr( d, 
+			u( display.xp-spend.[if( t( %qf ), normal, general )], 
+				%3, 
+				%qf, 
+				%qt, 
+				%qr, 
+				%qx, 
+				%qz, 
+				%1, 
+				%2, 
+				%7, 
+				name( %0 )
+			)
+		)]%r
+		[wfooter( )]; 
+
+	think 
+		most recent active xp job: 
+			[setr( j, last( u( f.recent.xp-jobs, %0 )))]%r
+		xp bucket: [setr( b, u( [v(d.jobs-database)]/FN_FIND-BUCKET, XP ))]; 
+
+	@if t( %qj )={ 
+		@trigger %!/trig.job.add=%0, %qj, %r%qd; 
+	}, { 
+		@trigger %!/trig.job.create=
+			%0, 
+			u( display.job-title, %3, %qf, %qt, %qz, %1 ), 
+			%r%qd; 
+	};
+
+
+
+--------------------------------------------------------------------------------
+-- DISPLAY: NORMAL XP SPEND ----------------------------------------------------
+
+0: trait type (merit, specialty, etc.)
+1: attribtue_name (trait)
+2: instance or specialty (french, latin, etc.)
+3: cost (requested)
+4: cost (estimated)
+5: 'from' value (optional)
+6: 'to' value (sometimes optional)
+7: notes
+8: '1' if in chargen
+9: player name
+
+--
+
+&DISPLAY.XP-SPEND.NORMAL XP Request Validation System <xrvs>=
+
+@@ >> player portion
+	%r
+	[ucstr( 
+		strcat( 
+			setr( e, edit( %1, _, %b )), 
+			if( t( %2 ), 
+				[if( strmatch( %0, specialty ), ., : )]
+				[setr( t, edit( %2, _, %b ))] 
+			)
+		)
+	)] ([lcstr( %0 )])
+	[if( strlen( %6 ), setr( v, %b%5 > %6 ), setr( v, ))]%r
+
+	XP Cost: %3[if( neq( %3, %4 ), %b%(expected %4%) )]
+	[if( t( %7 ), %r--%r%7 )]%r%r
+
+@@ >> staff portion
+	[divider( staff commands )]%r%r
+
+@@ .. stat-setting
+	[strcat( 
+		sheet/set %9/%0=, 
+		if( cand( eq( %6, 0 ), strlen( %6 )), !), 
+		lcstr( %1 ), 
+		case( 1, 
+			t( %6 ), :%6, 
+			cand( eq( %6, 0 ), strlen( %6 )), :%5 
+		), 
+		if( t( %2 ), 
+			if( strmatch( %0, specialty ), 
+				:%2, 
+				/%2 
+			)
+		), 
+@@ .. .. merits need manually unset, because main stat code
+		if( 
+			cand( strmatch( %0, merit ), gt( %5, 0 ), gt( %6, 0 )), 
+			strcat( 
+				%rsheet/set %9/%0=!, 
+				lcstr( %1 ), 
+				:%5, 
+				if( t( %2 ), /%2 ) 
+			)
+		)
+	)]%r
+
+@@ .. xp-logging
+	[strcat( 
+		+xp/spend %9=, 
+		%3, 
+		:, 
+		if( %8, CHARGEN:%b ), 
+		%qe, 
+		if( t( %2 ), if( strmatch( %0, specialty ), .%qt, %b(%qt) )), 
+		%qv 
+	)]%r
+
+
+--------------------------------------------------------------------------------
+-- DISPLAY: SPEND 'GENERAL' TRAIT ----------------------------------------------
+
+&DISPLAY.XP-SPEND.GENERAL XP Request Validation System <xrvs>=%r[ucstr( setr( e, edit( %0, _, %b )))] (general) %5 > %6%rXP Cost: %3[if( t( %4 ), %b%(expected %4%) )][if( t( %7 ), %r--%r%7)]%r%r[divider(staff commands)]%r%r[strcat(sheet/set %9/%0=, %6, if( t( %2 ), /%2 ))]%r[strcat(+xp/spend %9=, %3, :, if( %8, CHARGEN:%b ), [titlestr( %qe )], %b, %5 > %6)]%r
+
+
+--------------------------------------------------------------------------------
+-- GET CURRENT STAT: NORMAL ----------------------------------------------------
+
+@@ qf: Attribute name from further up the chain -- critical!
+
+&F.STATGET.NORMAL XP Request Validation System <xrvs>=
+	result from stat(): [setr( i, stat( %0, %qf[if( t( %2 ), ::%2 )] ))]
+
+
+--------------------------------------------------------------------------------
+-- GET CURRENT STAT: GLOBAL ----------------------------------------------------
+
+Set & Passed as: "Potency". Looked up as: "Blood-Potency".
+Setting the exception here because it's easier than unravelling fp_stat, below.
+
+Note to self: 'case()' is case-sensitive, and lookup usually returns lower-case
+
+--
+
+&F.STATGET.GLOBAL XP Request Validation System <xrvs>=
+	result from stat(): 
+	[setr( i, 
+		stat( %0, 
+			case( %1, 
+				potency, blood-potency, 
+				%1 
+			)
+		)
+	)]
+
+
+--------------------------------------------------------------------------------
+-- GET CURRENT STAT: SPECIALTY -------------------------------------------------
+
+&F.STATGET.SPECIALTY XP Request Validation System <xrvs>=
+	@@( folded into trig.process.specialty )
+
+
+--------------------------------------------------------------------------------
+-- GET CURRENT STAT ------------------------------------------------------------
+
+0: trait is 'normal', 'global', or 'specialty'
+1: dbref of target
+2: trait category
+3: trait type / instance
+4: trait name
+
+i: temp register
+z: player's current value
+
+--
+
+&F.STATGET XP Request Validation System <xrvs>=
+	[u( f.statget.%0, %1, %2, %3, %4 )] %r
+	type: 
+		[if( 
+			t( extract( %qi, 3, 1, : )), 
+			setr( t, extract( %qi, 3, 1, : ))
+		)] %r
+	current value: [setr( z, if( t( setr( z, extract( %qi, 2, 1, : ))), %qz, 0 ))]
+
+
+--------------------------------------------------------------------------------
+-- TRIGGER: ADD TO JOB ---------------------------------------------------------
+
+&TRIG.JOB.ADD XP Request Validation System <xrvs>=
+	@trigger [get( v( d.jobs-system )/va )]/TRIG_MYADD=
+		%1, 
+		stripansi( %2 ), 
+		%0, 
+		ADD; 
+
+	@trigger [get( v( d.jobs-system )/va )]/TRIG_BROADCAST=
+		%1, 
+		%0, 
+		ADD; 
+
+	@if not( strmatch( get( %1/title ), *(and more) ))={ 
+		&title %1=[get( %1/title )] (and more) 
+	};
+
+
+--------------------------------------------------------------------------------
+-- TRIGGER: CREATE NEW JOB -----------------------------------------------------
+
+&TRIG.JOB.CREATE XP Request Validation System <xrvs>=@trigger [setr( a, get( setr( c, v( d.jobs-system ))/va ))]/TRIG_CREATE=%0, u( %qa/FN_FIND-BUCKET, XP ), 2, u( %qa/FN_STRTRUNC, %1, 30 ), u( %qa/FN_STRTRUNC, trim( stripansi( %2 )), get( %qa/BUFFER )), , u( %qc/get_sphere_jgroup, %0 ), 2;
+
+--
+
+--
+
+&F.RECENT.XP-JOBS XP Request Validation System <xrvs>=u( [v( d.jobs-system )]/fn_jobs/select, u( d.recent.xp-jobs, %0 ))
+
+--
+
+&D.NO-VALUE.CLASSES XP Request Validation System <xrvs>=benediction devotion numina tactic gift
+
+&D.DONT-DISPLAY-LEVEL.CLASSES XP Request Validation System <xrvs>=benediction ceremonies devotion elixir gift goblin numina rite ritual rote tactic theban vestment
+
+--
+
+&DISPLAY.JOB-TITLE XP Request Validation System <xrvs>=[titlestr( edit( if( t( %1 ), %1, %0 ), _, %b ))][if( t( %2 ), if( strmatch( %0, specialty ), .[titlestr( edit( %2, _, %b ))], %b([titlestr( edit( %2, _, %b ))])))][if( cor( t( %3 ), t( %4 )), :%b%3 > %4 )]
+
+--
+
+&CMD.SWITCH.JOB XP Request Validation System <xrvs>=think title: [setr( t, stripansi( before( secure( %1 ), = )))]%rdisplay: [setr( d, stripansi( after( secure( %1 ), = )))]; 
+
+@pemit %0=You have requested '%qt' to the XP bucket for staff. Please allow for some time to process it.; 
+
+@trigger %!/trig.job.create=%0, %qt, %r%qd;
+
+
+--------------------------------------------------------------------------------
+-- XP COSTS FOR VARIOUS THINGS -------------------------------------------------
+
+@@ by 'costs' we mean values that you can set it to, not xp costs
+
+&F.LIST.COSTS XP Request Validation System <xrvs>=localize( 
+	case( 1, 
+		isint( setr( i, get( #2672/COST-%0 ))), 
+		%qi, 
+
+		strmatch( %qi, ?-* ), 
+		lnum( before( %qi, - ), after( %qi, - )), 
+
+		hasattr( #2673, LEVEL-%0 ), 
+		get( #2673/LEVEL-%0 ), 
+
+		%qi 
+	)
+)
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: XP REQUEST ---------------------------------------------------------
+
++xpreq <category>/<trait>[ to <value>][=<notes>]
++xpreq <category>/<trait>[ to <value>] for <requested xp>=<notes>
+
++xpreq <major trait> to <value>[=<notes>]
++xpreq <major trait> to <value> for <requested xp>=<notes>
+
+"to <value>" is only optional when <trait> is binary (either have it or don't)
+
+--
+
+0: everything
+
+q1: category
+q2: stat
+q3: trait
+q4: to value
+q5: cost requested
+q6: notes
+
+a: 1 if unapproved (in chargen?
+i: all matching trait categories (or error)
+c: trait category (processed %q1)
+e: stat with underscores
+
+--
+
+&CMD.XP_SPEND XP Request Validation System <xrvs>=$+xpreq *:
+	@break strmatch( %0, *|* )={ 
+		@pemit %#=You can't use the | character in this command. 
+	}; 
+
+	think 
+		break apart input: [setr( m, u( f.input.break-apart, %0 ))]%r
+		put input into registers: %r%b %b
+			[iter( %qm, [inum( 0 )]: [setr( inum( 0 ), %i0 )], |, %r%b %b )]%r
+		category: 
+			[setr( 1, 
+				switch( %q1, 
+					primal u*, primal-urge, 
+					blood p*, potency, 
+					blood-*, potency, 
+					%q1 
+				)
+			)] %r
+		stat: %q2 %r
+		type: %q3 %r
+		to value: %q4 %r
+		cost requested: %q5 %r
+		notes: %q6 %r
+		in chargen?: [setr( a, isapproved( %#, unapproved ))];
+
+	@assert cor( isapproved( %# ), %qa )={ 
+		@pemit %#=Approved or unapproved players only. 
+	}; 
+
+	@assert t( statnum( sheetset, %qc ))={ 
+		@pemit %#=I can't find sheet category '%qc'. 
+	}; 
+
+	@assert eq( words( rest( setr( i, mall( sheetset, %q1 )) , : )), 1 )={ 
+		@pemit %#=Category: %qi 
+	}; 
+
+	think 
+		check & fix category: 
+			[setr( c, 
+				case( 
+					setr( c, trim( rest( %qi, : ))), 
+					respect, renown, 
+					contracts, contract, 
+					ceremonies, ceremonies, 
+					%qc 
+				)
+			)] %r
+		stat_with_underscores: [setr( e, edit( %q2, %b, _ ))]; 
+
+	@trigger %!/trig.process.
+		[if( strmatch( %qc, specialty ), specialty, normal )]=
+		%#, 
+		%q4, 
+		%q6, 
+		%qc, 
+		%qe, 
+		titlestr( %q3 ), 
+		%q5, 
+		%qa;
+
+--
+
+	0: enactor (%#)
+	1: to-value
+	2: notes
+	3: trait category
+	4: stat with underscores
+	5: type (instance)
+	6: cost requested
+	7: unapproved?
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: XP REQUEST WITH SWITCH ---------------------------------------------
+
+&CMD.XP_SWITCH XP Request Validation System <xrvs>=
+	$^\+xpreq/([^ ]*)?([\s\S]*)?$:
+	
+	@assert cor( isapproved( %# ), setr( a, isapproved( %#, unapproved )))={ 
+		@pemit %#=Approved or unapproved players only. 
+	}; 
+
+	@assert t( setr( s, lattr( %!/cmd.switch.%1* )))={ 
+		@pemit %#=No such switch. 
+	}; 
+
+	think switch: 
+		[setr( s, if( t( match( %qs, cmd.switch.%1 )), cmd.switch.%1, %qs ))]; 
+
+	@assert eq( words( %qs ), 1 )={ 
+		@pemit %#=Matches too many switches. 
+	}; 
+
+	@trigger %!/%qs=%#, trim( %2 );
+
+--
+
+@set XP Request Validation System <xrvs>/CMD.XP_SWITCH = regexp
+
+
+--------------------------------------------------------------------------------
+-- TRIGGER: PROCESS A SPECIALTY ------------------------------------------------
+
+0: Player dbref
+1: to value
+2: notes
+3: trait category
+4: stat with underscores
+5: type/instance (specialty, in this case)
+6: cost requested
+7: 1 if unapproved (in chargen?)
+8: <does not exist, yet gets passed on, no idea why>
+
+f: full trait name
+t: specialty (titlestr'd)
+z: grab '%qf:%qt' from player's specialty list, if it already exists
+x: specialty cost (probably should be 3, but we look it up anyhow)
+r: requested xp cost (if empty, set it to %qx)
+j: most recent xp job dbref, if any
+b: xp bucket dbref
+
+--
+
+
+&TRIG.PROCESS.SPECIALTY XP Request Validation System <xrvs>=
+	think 
+		full stat: [setr( f, statfull( skill, %4 ))] %r
+		specialty: [setr( t, iter( %5, titlestr( %i0 ), _, _))] %r
+		[if( 
+			cand( not( %qf ), not( %5 )), 
+			full stat try 2: [setr( f, statfull( skill, first( %4, . )))] %r
+			specialty try 2: 
+				[setr( t, iter( rest( %4, . ), titlestr( %i0 ), _, _))] %r
+		)]
+		matching specialties: 
+			[setr( z, 
+				grab( 
+					get( %0/_specialties ), 
+					[statnum( skill, %qf )]:%qt 
+				)
+			)] %r
+		specialty cost: [setr( x, u( xp.skill.specialty, %0, 0, 1 ))]%r
+		new requested cost: 
+			[setr( r, if( 
+				strmatch( %6, ), 
+				%qx, 
+				%6 
+			))]; 
+
+	@assert cand( t( %4 )), t( %5 ))={ 
+		@pemit %0=You must give me both a skill and a specialty. 
+	}; 
+
+	@assert t( %qf )={ 
+		@pemit %0=Specialties can only be added to skills. 
+	}; 
+
+	@assert not( %1 )={ 
+		@pemit %0=Specialties cannot be set to a value. 
+	}; 
+
+	@break t( %qz )={ 
+		@pemit %0=You already have the %qf specialty '[edit( %qt, _, %b )]'. 
+	}; 
+
+@@ .. cost requested has to make sense
+	@assert cand( isint( %qr ), gt( %qr, 0 ))={ 
+		@pemit %0=XP costs must be set to a positive integer value. 
+		[if( strmatch( %qr , */* ), You may be thinking of our old format. )]
+	}; 
+
+@@ .. if xp spent =/= xp cost, needs a reason/explanation
+	@break cand( neq( %qr, %qx ), not( strlen( %2 )))={ 
+		@pemit %0=Cost: I think getting 
+		'%qf.%qt' costs %qx xp. 
+		You put in %qr xp with no explanation for the difference.
+	}; 
+
+	@pemit %0=
+		[wheader( Buying: [u( display.job-title, specialty, %qf, %qt, , )] )]%r
+		[setr( d, 
+			u( display.xp-spend.normal, 
+				specialty, 
+				%qf, 
+				%qt, 
+				%qr, 
+				%qx, 
+				, 
+				, 
+				%2, 
+				%7, 
+				name( %0 )
+			)
+		)]%r
+		[wfooter( )]; 
+
+	think 
+		most recent active xp job: 
+			[setr( j, last( u( f.recent.xp-jobs, %0 )))] %r
+		xp bucket: [setr( b, u( [v(d.jobs-database)]/FN_FIND-BUCKET, XP ))]; 
+
+	@if t( %qj )={ 
+		@trigger %!/trig.job.add=
+			%0, 
+			%qj, 
+			%r%qd; 
+	}, { 
+		@trigger %!/trig.job.create=
+			%0, 
+			u( display.job-title, specialty, %qf, %qt, , ), 
+			%r%qd; 
+	};
+
+
+
+================================================================================
+== THE STAT() FUNCTION =========================================================
+
+Here in case it doesn't grab a different trait category
+
+--
+
+&FP_STAT #978=
+	[objeval( %@, localize( 
+		[setq( g, )]
+		[setq( n, edit( first( %1, : ), %b, _ ))]
+		[setq( g, 
+			iter( u( #4734/f.iterlist, template( %0 )), 
+				if( 
+					t( setr( z, grab( u( #89/%i0 ), %qn* ))), 
+					%i0 %qz 
+				), 
+				, | 
+			)
+		)]
+		[if( 
+			setr( z, grab( %qg, LIST_* %qn, | )), 
+			setq( g, %qz ), 
+			setq( g, grab( %qg, LIST_* %qn*, | ))
+		)]
+		[setq( 0, rest( %qg ))]
+		[setq( 1, extract( %1, 2, 1, : ))]
+		[setq( 2, extract( %1, 3, 1, : ))]
+		[if( 
+			and( 
+				t( setr( x, u( #4734/f.stat, %0, %q0 ))), 
+				strmatch( %qx, %q0* %q1* )
+			), 
+			edit( %qx, %b, : ), 
+
+			if( 
+				t( setr( y, first( lattr( %0/_%1* )))), 
+				[titlestr( edit( %qy, _, ))]:
+				[getattr( %0, %qy )], 
+
+				switch( 
+					t( setr( w, lcstr( rest( first( %qg ), _ )))), 
+					0, 
+					#-1, 
+					if( 
+						t( setr( c, 
+							case( 1, 
+@@ .. traits in these catagories are stored: <name>~<value>~<type/instance>
+								t( match( 
+									merit|favor|aspects|renown, 
+									%qw*, 
+									| 
+								)), 
+								edit( 
+									if( 
+										t( setr( v, 
+											grab( 
+												getattr( %0, _%qw ), 
+												%q0*~%q1*~%q2*, | 
+											)
+										)), 
+										%qv, 
+@@ .. .. (we have to account for merit -> &_merits)
+										grab( 
+											getattr( %0, _%qws ), 
+											%q0*~%q1*~%q2*, | )
+										), 
+									~, : 
+								), 
+
+@@ .. traits in these catagories are stored: <name>:<value>
+								t( match( contract|discipline, %qw*, | )), 
+								grab( 
+									getattr( 
+										%0, 
+										first( sort( cat( 
+											lattr( %0/_%qw ), 
+											lattr( %0/_%qws )
+										)))
+									), 
+									%q0*:%q2* 
+								), 
+@@ .. even so, some basic traits are stored with an 's' at the end
+@@ .. (e.g., siddhi -> &_siddhis)
+								t( setr( v, 
+									grab( getattr( %0, _%qw ), %q0*:%q1* )
+								)), 
+								%qv, 
+								grab( getattr( %0, _%qws ), %q0*:%q1* )
+							)
+						)), 
+						%qc, 
+						#-1 
+					)
+				)
+			)
+		)]
+	 ))]
+

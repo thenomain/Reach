@@ -1,0 +1,136 @@
+Inherited: bloodline, path, seeming, etc.
+Social: the others
+
+axis( <player>, inherited|chosen )
+- Checks the character's template, pulls their inherited (bloodline) or social
+ (clan) attribute
+
+axis( list )
+axis( )
+- lists the list of listing
+
+axis( list, <template> )
+- lists just for that template
+
+
+--------------------------------------------------------------------------------
+-- DATA: Character Axises ------------------------------------------------------
+
+axis.<sphere>.inherited|.social
+
+ulocal() these:
+
+--
+
+&axis.body_thief.social #89=stat( %0, Club )
+
+&axis.changeling.inherited #89=stat( %0, Seeming )
+&axis.changeling.social #89=stat( %0, Court )
+
+&axis.demon.inherited #89=stat( %0, Incarnation )
+&axis.demon.social #89=stat( %0, Agenda )
+
+&axis.fae-touched.inherited #89=stat( %0, Seeming )
+
+&axis.geist.inherited #89=stat( %0, Threshold )
+&axis.geist.social #89=stat( %0, Archetype )
+
+&axis.ghoul.inherited #89=if( 
+		setr( i, stat( setr( r, pmatch( get( %0/_REGENT ))), Bloodline )), 
+		%qi, 
+		stat( %qr, Clan )
+	)
+&axis.ghoul.social #89=stat( pmatch( get( %0/_REGENT )), Covenant )
+
+&axis.hunter.inherited #89=stat( %0, Consipracy )
+
+&axis.mage.inherited #89=stat( %0, Path )
+&axis.mage.social #89=stat( %0, Order )
+
+&axis.possessed.inherited #89=stat( %0, Primary-Vice )
+
+&axis.proximus.inherited #89=stat( %0, Path )
+&axis.proximus.social #89=stat( %0, Order )
+
+&axis.shifter.inherited #89=elements( stat( %0, Species ), 1 2, : )
+&axis.shifter.social #89=stat( %0, Accord )
+
+&axis.sleepwalker.social #89=stat( %0, Order )
+
+&axis.thaumaturge.social #89=stat( %0, Path )
+
+&axis.werewolf.inherited #89=stat( %0, Auspice )
+&axis.werewolf.social #89=stat( %0, Tribe )
+
+&axis.vampire.inherited #89=if( 
+		setr( i, stat( %0, Bloodline )), 
+		%qi, 
+		stat( %0, Clan )
+	)
+&axis.vampire.social #89=stat( %0, Covenant )
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: Axis --------------------------------------------------------------
+
+Determines the axis of a player, or lists what it knows.
+
+0: player dbref or 'list'
+1: if player: 'inherited|supernatural' or 'social|chosen' or 'both'
+   if 'list': template
+
+--
+
+&fp_axis #978=
+	case( 1, 
+
+		strmatch( %0, ),
+		I know the following templates: 
+		[iter( lattr( ), elements( %i0, 2, . ))], 
+
+		not( 
+			cor( 
+				isstaff( owner( %@ )), 
+				strmatch( num( %0 ), %@ )
+			)
+		), 
+		#-1 PERMISSION DENIED, 
+
+		not( istype( %0, PLAYER )),
+		#-1 PLAYER NOT FOUND, 
+
+@@ .. 'inherited|supernatural', 'social|chosen', 'both'
+		not( setr( a, 
+			grab( 
+				|inherited:inherited
+				|supernatural:inherited
+				|social:social
+				|chosen:social
+				|both:inherited social, 
+				%1*, 
+				| 
+			)
+		)), 
+		#-1 AXIS NOT FOUND, 
+
+@@ .. do it
+		strcat(
+			setq( t, template( %0 )), 
+
+			iter( rest( %qa, : ), 
+				case( 0, 
+					hasattr( #89/axis.%qt.%i0 ), 
+				#-1 NO [ucstr( %i0 )] FOR [capstr( %qt )], 
+					t( setr( s, ulocal( #89/axis.%qt.%i0, %0 ))), 
+					#-1 [ucstr( %i0 )] NOT SET, 
+					%qs
+				), 
+				, |
+			)
+		)
+	)
+
+--------------------------------------------------------------------------------
+
+think u( #978/fp_axis, *thenomain, social )
+think axis( *thenomain, social )

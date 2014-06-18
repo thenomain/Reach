@@ -1,0 +1,44 @@
+Faepose: Things only Changelings and those with the HEDGE reality level can see.
+
+fp <stuff>
+	: - pose
+	; - pose without the space
+	| - emit (as in the 'places' system)
+	" - say
+	anything else is also "say"
+
+--
+
+&f.say-what #130=
+	switch( %1, 
+		:, name( %0 ) %2, 
+		;, name( %0 )%2, 
+		|, %2, 
+		", name( %0 ) says%, “%2”, 
+		name( %0 ) says%, “%1%2” 
+	)
+
+--
+
+&c.fpose #130=$^fp (.)(.*)$:
+
+	@assert u( fil.cansee, %#, %! )={ @pemit %#=Nope. }; 
+	
+	@break andflags( loc( %# ), AbB )={ @pemit %#=Not in a Quiet Room. }; 
+
+	think cat( 
+		Message:, setr( m, u( f.say-what, %#, %1, %2 )), 
+		%rWhere:, setr( w, loc( %# )), 
+		%rWho:, setr( w, lcon( %qw, PLAYER )), 
+		%rFilter:, setr( f, filter( fil.cansee, %qw, , , %! ))
+	); 
+
+	@pemit %qf=ansi( xh, %[faepose%], n, %b%qm); 
+
+--
+
+@set #130/c.fpose=regexp
+
+--
+
+&fil.cansee #130=cand( hasrxlevel( %0, HEDGE ), hasflag( %0, CONNECT ))

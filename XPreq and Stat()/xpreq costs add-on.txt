@@ -1,0 +1,991 @@
+THIS FIRST SECTION can be considered a test of concept. Most of the code comes from the +xpreq system.
+
+Willpower remains a sticking point: Sacrificed is set as a negative in the &_willmod attribute, so spending xp on willpower should be, e.g., -1 -> 0, or 8xp.
+
+Whether or not this can be attained easily remains to be seen.
+
+-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-
+
+&CMD.SWITCH.COST #14370=
+	@break strmatch( %1, *|* )={ 
+		@pemit %0=You can't use the | character in this command. 
+	}; 
+
+	think 
+		break apart input: [setr( m, u( f.input.break-apart, %1 ))]%r
+		put input into registers: %r%b %b
+			[iter( %qm, [inum( 0 )]: [setr( inum( 0 ), %i0 )], |, %r%b %b )]%r
+		category: 
+			[setr( 1, 
+				switch( %q1, 
+					primal u*, primal-urge, 
+					blood p*, potency, 
+					blood-*, potency, 
+					%q1 
+				)
+			)] %r
+		stat: %q2 %r
+		type: %q3 %r
+		to value: %q4 %r
+		cost requested: %q5 %r
+		notes: %q6 %r
+		in chargen?: [setr( a, isapproved( %0, unapproved ))];
+
+	@assert cor( isapproved( %0 ), %qa )={ 
+		@pemit %0=Approved or unapproved players only. 
+	}; 
+
+	@assert t( statnum( sheetset, %qc ))={ 
+		@pemit %0=I can't find sheet category '%qc'. 
+	}; 
+
+	@assert eq( words( rest( setr( i, mall( sheetset, %q1 )) , : )), 1 )={ 
+		@pemit %0=Category: %qi 
+	}; 
+
+	think 
+		check & fix category: 
+			[setr( c, 
+				case( 
+					setr( c, trim( rest( %qi, : ))), 
+					respect, renown, 
+					contracts, contract, 
+					ceremonies, ceremonies, 
+					%qc 
+				)
+			)] %r
+		stat_with_underscores: [setr( e, edit( %q2, %b, _ ))]; 
+
+	@trigger %!/trig.xp-cost.
+		[if( strmatch( %qc, specialty ), specialty, normal )]=
+		%0, 
+		%q4, 
+		%q6, 
+		%qc, 
+		%qe, 
+		titlestr( %q3 ), 
+		%q5, 
+		%qa;
+
+
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+--
+
+
+0: enactor (%#)
+1: to-value
+2: notes
+3: trait category
+4: stat/trait with underscores
+5: type (instance)
+6: unadjusted cost
+7: 1 if unapproved
+
+f: full stat name (for partial-name matching)
+u: templates that are allowed access
+i: temp register, via u( f.statget )
+t: type / instance (%5), or replaced via u( f.statget )
+z: player's current value for trait, via u( f.statget )
+v: costs allowed for this trait (not xp costs, but valid levels)
+
+x: estimated xp cost
+
+--
+
+&trig.xp-cost.normal #14370=
+	think 
+		who: [name( %0 )] ( %0 )%r
+		full stat: [setr( f, statfull( %3, %4 ))]; 
+
+@@ .. validate trait category and trait 
+
+	@assert t( statnum( %3, %4 ))={ 
+		@pemit %0=I can't find the [lcstr( %3 )] '[edit( %4, _, %b )]'. 
+	}; 
+
+	@assert isrepeat( %3, %4 )={ 
+		@pemit %0=[titlestr( %3 )]: [mall( %3, %4 )] 
+	}; 
+
+	@assert 
+		cor( 
+			match( setr( u, default( #2681/access-%4, all )), all ), 
+			strmatch( template( %0 ), %qu )
+		)={ 
+			@pemit %0=The trait '%qf' is only for the template(s) 
+			[itemize( %qu )]. 
+	}; 
+
+@@ .. get stat's current value
+
+	think 
+		[u( f.statget, 
+			if( not( %qf ), global, normal ), 
+			%0, %3, setr( t, %5 ), %qf 
+		)]%r
+		trait values: [setr( v, u( f.list.costs, %qf ))]; 
+	
+	@assert 
+		if( 
+@@ .. .. skip this check on classes that don't take values
+			t( match( v( d.no-value.classes ), %3 )), 
+			1, 
+@@ .. .. yeah, I can't remember what this is doing
+			or( 
+				t( match( cat( %qv, 0 ), %1 )), 
+				cand( strmatch( %qv, ), isint( %1 ), gte( %1, 0 ))
+			)
+		)={ 
+			@pemit %0=
+				if( strmatch( %qv, ), 
+					I was expecting the new value to be a positive integer., 
+					That %3 can only be set to: [itemize( %qv, , or )] 
+				) 
+		}; 
+
+	@assert 
+		if( 
+			t( match( v( d.no-value.classes ), %3 )), 
+			strmatch( %1, ), 
+			1 
+		)={ 
+			@pemit %0=
+				[capstr( %3 )]
+				[if( strmatch( %3, *s ), e )]s 
+				cannot be set to a value. 
+		}; 
+
+	@assert 
+		cor( gt( %1, %qz ), strmatch( %1, ))={ 
+			@pemit %0=The trait's new value of '%1' must be higher than its 
+			current value of '%qz'. 
+	}; 
+
+@@ .. estimate xp value
+@@ .. check 'xp.<class>.<trait>' for exceptions, then 'xp.<class>'
+@@ .. (remember, for this system, some traits are considered classes)
+
+	think 
+		xp.[edit( %3, %b, _ )].%4: 
+			[edit( 
+				v( xp.[edit( %3, %b, _ )].%4 ), 
+				lit( %0 ), %0, 
+				lit( %1 ), %qf, 
+				lit( %2 ), %qz, 
+				lit( %3 ), %1, 
+				lit( %4 ), %qv 
+			)]%r
+		xp.[edit( %3, %b, _ )]: 
+			[edit( 
+				v( xp.[edit( %3, %b, _ )] ), 
+				lit( %0 ), %0, 
+				lit( %1 ), %qf, 
+				lit( %2 ), %qz, 
+				lit( %3 ), %1, 
+				lit( %4 ), %qv 
+			)]%r
+		estimated cost: 
+			[setr( x, 
+				udefault( xp.[edit( %3, %b, _ )].%4, 
+					u( xp.[edit( %3, %b, _ )], 
+						%0, 
+						%qf, 
+						%qz, 
+						%1, 
+						%qv 
+					), 
+					%0, 
+					%qf, 
+					%qz, 
+					%1, 
+					%qv 
+				)
+			)]%r
+		new requested cost: 
+			[setr( r, if( 
+				strmatch( %6, ), 
+				%qx, 
+				%6 
+			))]; 
+
+	@break eq( %qx, 0 )={ 
+		@pemit %0=You cannot '+xpreq 
+		[if( t( %qf ), %qf, first( %qi, : ))][if( t( %5 ), :%5 )]' 
+		because its cost is recorded as 0. 
+		Try: +xpreq/job <title>=<request>
+	}; 
+
+@@ .. cost requested has to make sense
+	@assert cand( isint( %qr ), gt( %qr, 0 ))={ 
+		@pemit %0=XP costs must be set to a positive integer value. 
+		[if( strmatch( %qr , */* ), You may be thinking of our old format. )]
+	}; 
+
+@@ >> Display Results
+@@ .. if xp spent =/= xp cost, needs a reason/explanation
+	@pemit %0=
+		[u( display.xp-cost.all, 
+			[if( t( %qf ), %qf, first( %qi, : ))][if( t( %5 ), %b%(%5%))], 
+			%qz, 
+			%1, 
+			%qr, 
+			%qx, 
+			%2 
+		)]; 
+
+
+
+
+-=--=-=-=-=-=-=-=-=-=-=
+
+
+
+---
+
+&TRIG.XP-COST.SPECIALTY #14370=
+	think 
+		full stat: [setr( f, statfull( skill, %4 ))] %r
+		specialty: [setr( t, iter( %5, titlestr( %i0 ), _, _))] %r
+		[if( 
+			cand( not( %qf ), not( %5 )), 
+			full stat try 2: [setr( f, statfull( skill, first( %4, . )))] %r
+			specialty try 2: 
+				[setr( t, iter( rest( %4, . ), titlestr( %i0 ), _, _))] %r
+		)]
+		matching specialties: 
+			[setr( z, 
+				grab( 
+					get( %0/_specialties ), 
+					[statnum( skill, %qf )]:%qt 
+				)
+			)] %r
+		specialty cost: [setr( x, u( xp.skill.specialty, %0, 0, 1 ))]%r
+		new requested cost: 
+			[setr( r, if( 
+				strmatch( %6, ), 
+				%qx, 
+				%6 
+			))]; 
+
+	@assert cand( t( %4 )), t( %5 ))={ 
+		@pemit %0=You must give me both a skill and a specialty. 
+	}; 
+
+	@assert t( %qf )={ 
+		@pemit %0=Specialties can only be added to skills. 
+	}; 
+
+	@assert not( %1 )={ 
+		@pemit %0=Specialties cannot be set to a value. 
+	}; 
+
+	@break t( %qz )={ 
+		@pemit %0=You already have the %qf specialty '[edit( %qt, _, %b )]'. 
+	}; 
+
+@@ .. cost requested has to make sense
+	@assert cand( isint( %qr ), gt( %qr, 0 ))={ 
+		@pemit %0=XP costs must be set to a positive integer value. 
+		[if( strmatch( %qr , */* ), You may be thinking of our old format. )]
+	}; 
+
+@@ .. if xp spent =/= xp cost, needs a reason/explanation
+	@pemit %0=
+		[u( display.xp-cost.all, %qf.%qt, @@(from), @@(to), %qr, %qx, %2 )]; 
+
+
+-=-=-=-=-=-=-==--=-=-=
+
+Display +xpreq/cost results.
+
+0: stat
+1: from
+2: to
+3: requested xp
+4: calculated xp
+5: reason
+
+--
+
+&display.xp-cost.all #14370=
+	[ansi( h, +xpreq/cost )]: I think getting '%0' 
+	[if( strlen( %2 ), 
+		from %1 
+		to %2%b 
+	)]
+	costs %4 xp. 
+	[if( neq( %3, %4 ), 
+		You want it for %3 xp
+		[if( t( strlen( %5 )), 
+			.,  
+			%bbut gave no explanation for the difference. 
+		)]
+	)] 
+	[if( t( strlen( %5 )), 
+		Reason: %5 
+	)]
+
+
+
+
+
+
+
+
+
+-=-=-=-=-=-=-=-=
+
+@@ depreciated for 'f.input.break-apart'
+
+&D.REGMATCH.XPREQ #14370=(.*?)( to (.+))? for ([0-9]+.*)
+
+--
+
+@@ &d.regmatch.xpreq.cost #14370=(.+?)( to (.+?))?( for ([0-9]+.*))?
+@@ Not going to work; Chime says I need a lookahead, so no.
+
+-==--=-=-==-=-=--
+
+pull apart the stuff instead of using regmatch:
+
++xpreq [<trait category>/]<trait name>[:<trait instance>][ to <new value>][ for <adjusted xp cost>][=<reason/notes>]
+
+Returns:
+	<trait category>|<trait name>|<trait instance>|<new value>|<adjusted xp>|<reason/notes>
+
+--
+
+&f.input.break-apart #14370=
+localize( 
+	strcat( 
+		setq( 0, trim( %0 )), 
+		setq( 1, trim( before( before( before( %q0, = ), %bfor%b ), %bto%b ))), 
+		setq( 2, trim( after( before( before( %q0, = ), %bfor%b ), %bto%b ))), 
+		setq( 3, trim( before( after( before( %q0, = ), %bfor%b ), xp ))), 
+		setq( 4, trim( after( %q0, = ))), 
+		trim( first( %q1, / )), |, 
+		trim( first( rest( %q1, / ), : )), |, 
+		trim( rest( %q1, : )), |, 
+		%q2, |, 
+		%q3, |, 
+		%q4 
+	)
+)
+
+--
+
+think u( #14370/f.input.break-apart, group/trait to 4=reason )
+think u( #14370/f.input.break-apart, group/trait=reason )
+think u( #14370/f.input.break-apart, group/trait for 5xp=reason )
+think u( #14370/f.input.break-apart, group / trait to 4 for 14 xp = reason )
+think u( #14370/f.input.break-apart, group / trait : instance to 4 for 14 xp = reason )
+
+think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a test to see ...  )
+
+--
+
+
+================================================================================
+== DATA ========================================================================
+
+@@ 0: dbref of target
+@@ 1: name of trait (used only for gifts, for now)
+@@ 2: from
+@@ 3: to
+@@ 4: valid levels list, if applicable
+
+@@ -- standard
+&xp.attribute #14370=u( f.cost.standard, 5, %2, %3 )
+&xp.skill #14370=u( f.cost.standard, 3, %2, %3 )
+&xp.skill.specialty #14370=3
+&xp.merit #14370=u( f.cost.standard, 2, %2, %3 )
+&xp.morality #14370=u( f.cost.standard, 3, %2, %3 )
+@@ &xp.willpower #14370=u( f.cost.single, 8, %2, %3 )
+&xp.willpower #14370=0
+&xp.power_trait #14370=u( f.cost.standard, 8, %2, %3 )
+
+
+@@ -- changeling
+&xp.wyrd #14370=u( f.cost.standard, 8, %2, %3 )
+&xp.contract #14370=u( f.cost.standard, 6, %2, %3 )
+&xp.goblin #14370=u( f.cost.direct, 3, %2, %3 )
+&xp.merit.token_limb #14370=u( f.cost.standard, 3, %2, %3 )
+
+@@ -- changeling: affinity, universal
+&xp.contract.dream #14370=u( f.cost.standard, 4, %2, %3 )
+&xp.contract.hearth #14370=u( f.cost.standard, 4, %2, %3 )
+&xp.contract.mirror #14370=u( f.cost.standard, 4, %2, %3 )
+&xp.contract.smoke #14370=u( f.cost.standard, 4, %2, %3 )
+&xp.contract.board #14370=u( f.cost.standard, 4, %2, %3 )
+&xp.contract.omen #14370=u( f.cost.standard, 4, %2, %3 )
+&xp.contract.moon #14370=u( f.cost.standard, 4, %2, %3 )
+&xp.contract.hours #14370=u( f.cost.standard, 4, %2, %3 )
+&xp.contract.lucidity #14370=u( f.cost.standard, 4, %2, %3 )
+&xp.contract.wild #14370=u( f.cost.standard, 4, %2, %3 )
+&xp.contract.thorns_and_brambles #14370=u( f.cost.standard, 4, %2, %3 )
+
+@@ -- changeling: affinity, seeming
+@@ -- fang & talon , communion and elements are done in a way that this code 
+@@ -- cannot (yet) reconcile
+
+&xp.contract.animation #14370=u( f.cost.contract.seeming, %0, %2, %3, wizened )
+&xp.contract.artiface #14370=u( f.cost.contract.seeming, %0, %2, %3, wizened )
+&xp.contract.communion #14370=u( f.cost.contract.seeming, %0, %2, %3, elemental )
+&xp.contract.communion_(fire) #14370=u( f.cost.contract.seeming, %0, %2, %3, elemental baswenaazhi )
+&xp.contract.darkness #14370=u( f.cost.contract.seeming, %0, %2, %3, darkling )
+&xp.contract.den #14370=u( f.cost.contract.seeming, %0, %2, %3, beast )
+&xp.contract.fang_and_talon #14370=u( f.cost.contract.seeming, %0, %2, %3, beast )
+&xp.contract.forge #14370=u( f.cost.contract.seeming, %0, %2, %3, wizened )
+&xp.contract.oath_and_punishment #14370=u( f.cost.contract.seeming, %0, %2, %3, ogre )
+&xp.contract.reflections #14370=u( f.cost.contract.seeming, %0, %2, %3, fairest )
+&xp.contract.separation #14370=u( f.cost.contract.seeming, %0, %2, %3, fairest )
+&xp.contract.shade_and_spirit #14370=u( f.cost.contract.seeming, %0, %2, %3, darkling )
+&xp.contract.stone #14370=u( f.cost.contract.seeming, %0, %2, %3, ogre )
+&xp.contract.vainglory #14370=u( f.cost.contract.seeming, %0, %2, %3, fairest )
+&xp.contract.wild #14370=u( f.cost.contract.seeming, %0, %2, %3, beast elemental )
+
+@@ -- changeling: affinity, court
+
+&xp.contract.verdant_spring #14370=u( f.cost.contract.court, %0, %2, %3, spring )
+&xp.contract.fleeting_spring #14370=u( f.cost.contract.court, %0, %2, %3, spring )
+&xp.contract.eternal_spring #14370=u( f.cost.contract.court, %0, %2, %3, spring )
+
+&xp.contract.punishing_summer #14370=u( f.cost.contract.court, %0, %2, %3, summer baswenaazhi )
+&xp.contract.eternal_summer #14370=u( f.cost.contract.court, %0, %2, %3, summer )
+&xp.contract.fleeting_summer #14370=u( f.cost.contract.court, %0, %2, %3, summer )
+
+&xp.contract.spellbound_autumn #14370=u( f.cost.contract.court, %0, %2, %3, autumn )
+&xp.contract.eternal_autumn #14370=u( f.cost.contract.court, %0, %2, %3, autumn )
+&xp.contract.fleeting_autumn #14370=u( f.cost.contract.court, %0, %2, %3, autumn )
+
+&xp.contract.sorrow-frozen_heart #14370=u( f.cost.contract.court, %0, %2, %3, winter waawaazisii )
+&xp.contract.eternal_winter #14370=u( f.cost.contract.court, %0, %2, %3, winter )
+&xp.contract.fleeting_winter #14370=u( f.cost.contract.court, %0, %2, %3, winter )
+
+&xp.contract.potential #14370=u( f.cost.contract.court, %0, %2, %3, dawn )
+
+&xp.contract.entropy #14370=u( f.cost.contract.court, %0, %2, %3, dusk )
+
+&xp.contract.four_directions #14370=u( f.cost.contract.court, %0, %2, %3, north south east west waawaazisii )
+
+
+@@ -- changing breeds
+
+&xp.feral-heart #14370=u( f.cost.standard, 8, %2, %3 )
+&xp.aspects #14370=u( f.cost.no-phantom-dots, 5, %2, %3, %4 )
+&xp.favor #14370=u( f.cost.standard, 7, %2, %3 )
+&xp.renown #14370=u( f.cost.standard, case( template( %0 ), Shifter, 6, Werewolf, 8, 0 ), %2, %3 )
+
+
+@@ -- cultist
+&xp.cult-rite #14370=u( f.cost.standard, 2, %2, %3 )
+
+
+@@ -- hunter
+&xp.benediction #14370=5
+&xp.elixir #14370=u( f.cost.single, 1, %2, %3 )
+&xp.thaumatechnology #14370=u( f.cost.standard, 2, %2, %3 )
+&xp.ducheval #14370=2
+&xp.armory #14370=u( f.cost.standard, 2, %2, %3 )
+@@ .. tactics are never bought with xp and are beyond the scope
+&xp.tactic #14370=0
+
+
+@@ -- geist
+&xp.psyche #14370=u( f.cost.standard, 8, %2, %3 )
+&xp.manifestations #14370=u( f.cost.standard, 6, %2, %3 )
+&xp.key #14370=10
+&xp.ceremonies #14370=u( f.cost.direct, 3, %2, %3 )
+
+
+@@ -- mage
+&xp.gnosis #14370=u( f.cost.standard, 8, %2, %3 )
+&xp.arcana #14370=u( f.cost.standard, 8, %2, %3 )
+&xp.rote #14370=u( f.cost.direct, 2, %2, %3 )
+
+&xp.arcana.death #14370=u( f.cost.arcanum, %0, %2, %3, moros, obrimos )
+&xp.arcana.fate #14370=u( f.cost.arcanum, %0, %2, %3, acanthus,  )
+&xp.arcana.forces #14370=u( f.cost.arcanum, %0, %2, %3, obrimos, acanthus )
+&xp.arcana.life #14370=u( f.cost.arcanum, %0, %2, %3, thyrsus,  )
+&xp.arcana.matter #14370=u( f.cost.arcanum, %0, %2, %3, moros, mastigos )
+&xp.arcana.mind #14370=u( f.cost.arcanum, %0, %2, %3, mastigos, thyrsus )
+&xp.arcana.prime #14370=u( f.cost.arcanum, %0, %2, %3, obrimos,  )
+&xp.arcana.space #14370=u( f.cost.arcanum, %0, %2, %3, mastigos,  )
+&xp.arcana.spirit #14370=u( f.cost.arcanum, %0, %2, %3, thyrsus, moros )
+&xp.arcana.time #14370=u( f.cost.arcanum, %0, %2, %3, acanthus,  )
+
+
+
+@@ -- possessed
+&xp.vice-power #14370=u( f.cost.standard, 10, %2, %3 )
+&xp.vestment #14370=10
+
+@@ -- purified (immortal)
+&xp.chi #14370=u( f.cost.standard, 8, %2, %3 )
+&xp.siddhi #14370=u( f.cost.standard, 7, %2, %3 )
+&xp.numen #14370=10
+
+@@ -- vampire
+@@ &xp.blood-potency #14370=u( f.cost.standard, 8, %2, %3 )
+&xp.potency #14370=u( f.cost.standard, 8, %2, %3 )
+&xp.discipline #14370=u( f.cost.standard, case( template( %0 ), Vampire, 7, Ghoul, 14, 0 ), %2, %3 )
+
+&xp.discipline.coil_of_banes #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_blood #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_flesh #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_the_beast #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_the_soul #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+
+@@ .. 'theban' is limited by the Theban trait
+&xp.discipline.theban_sorcery #14370=u( f.cost.standard, 7, %2, %3 )
+&xp.theban #14370=u( f.cost.single, 2, %2, %3 )
+
+@@ .. 'ritual' is limited by the Cruac trait
+&xp.discipline.cruac #14370=u( f.cost.standard, 7, %2, %3 )
+&xp.ritual #14370=u( f.cost.single, 2, %2, %3 )
+
+
+@@ -- werewolf
+&xp.primal-urge #14370=u( f.cost.standard, 8, %1, %2 )
+
+@@ 0: dbref
+@@ 1: name of 'me'
+@@ 2: qz, player's current value
+@@ 3: to-value (should be ignored)
+@@ 4: qv, expected value
+
+&xp.gift #14370=switch( template( %0 ), Werewolf, u( f.cost.gift.werewolf, %0, %2, %4, %1 ), Shifter, u( f.cost.direct, 5, %2, add( %4, max( 0, sub( %4, 3 )))), 0 )
+
+
+@@ f.cost.gift.werewolf, %0, %2, %4, <auspices>, <tribes>
+@@ except that gift format is:
+@@       <gift name> (<gift category>)
+@@ e.g.: Primal Form (Mother-Luna)
+
+
+&xp.gift.rituals_1 #14370=5
+&xp.gift.rituals_2 #14370=10
+&xp.gift.rituals_3 #14370=15
+&xp.gift.rituals_4 #14370=20
+&xp.gift.rituals_5 #14370=25
+
+&xp.rite #14370=u( f.cost.direct, 2, %2, %3 )
+&xp.merit.totem #14370=u( f.cost.single, 3, %2, %3 )
+
+
+================================================================================
+== COST CALCULATIONS ===========================================================
+
+@@ 0: xp cost
+@@ 1: from (first)
+@@ 2: to (last)
+@@ 3: stat's numeric value list (e.g., 2.4)
+
+@@ Numbers from 'first' to 'last' is: ( L²
+@@ We '++from' because we want all the numbers it's raised /past/ 'from'.
+@@ So: (( L²
+@@ We '* cost * .5' to make sure it's still integer before it's floating.
+
+&f.cost.standard #14370=mul( add( power( %2, 2 ), -[power( inc( %1 ), 2 )], inc( %1 ), %2 ), %0, .5 )
+
+@@ Do not pass Go
+&f.cost.direct #14370=mul( %0, %2 )
+
+@@ cost * levels bought
+&f.cost.single #14370=mul( %0, sub( %2, %1 ))
+
+@@ for changing breed "aspects"
+&f.cost.no-phantom-dots #14370=ladd( iter( setinter( %3, lnum( inc(%1), %2 )), mul( %0, %i0 )))
+
+
+================================================================================
+== AFFINITY CHECKS =============================================================
+
+0: player dbref
+1: axis' trait to match (seeming, bloodline, etc.)
+2: axis to match (inherited or chosen)
+returns: 1 if true
+
+--
+
+&f.has-affinity #14370=
+	t( setinter( 
+		lcstr( last( axis( %0, %2 ), : )), 
+		lcstr( %1 )
+	))
+
+
+--------------------------------------------------------------------------------
+-- Affinity costs for specific spheres and axii --------------------------------
+
+0: target dbref
+1: from
+2: to
+3+: usually list of axis values to check for their affinity status
+    for werewolf gifts, %3 is the full gift name (with gift category)
+
+--
+
+&f.cost.contract.seeming #14370=u( f.cost.standard, add( 6, mul( -2, u( f.has-affinity, %0, %3, inherited ))), %1, %2 )
+
+&f.cost.contract.court #14370=u( f.cost.standard, add( 6, mul( -2, u( f.has-affinity, %0, %3, chosen ))), %1, %2 )
+
+&f.cost.arcanum #14370=
+	u( f.cost.standard, 
+		add( 
+			7, 
+			mul( -1, u( f.has-affinity, %0, %3, inherited )), 
+			mul( 1, u( f.has-affinity, %0, %4, inherited ))
+		), 
+		%1, 
+		%2 
+	)
+
+@@ &f.cost.discipline #14370=u( f.cost.discipline.[template( %0) ], )
+
+@@ &f.cost.discipline.ghoul #14370=u( f.cost.standard, add( 14, mul( -4, u( f.has-affinity, %0, %3, inherited ))), %1, %2 )
+
+@@ &f.cost.discipline.vampire #14370=u( f.cost.standard, add( 7, mul( -2, u( f.has-affinity, %0, %3, inherited ))), %1, %2 )
+
+@@ non-affinity: 7, affinity: 5, not-allowed: 0
+
+&f.cost.gift.werewolf #14370=u( f.cost.standard, add( 7, mul( -2, u( f.affinity.werewolf.[u( f.extract-instance, %3 )], %0 ))), %1, %2 )
+
+@@ &f.affinity.werewolf.<gift category> #14370=<affinity check, 0 or 1 or 3.5>
+@@ 3.5 is to turn '7 + (-2 * <num>)' into 0, making it non-purchasable
+
+
+-=-=--=
+
+&f.extract-instance #14370=edit( rest( before( %0, %) ), %( ), %b, _ )
+
+
+
+================================================================================
+== NOTES =======================================================================
+
+Other notes, to be dwelled upon.
+
+** Changeling
+Affinity Contract	 New Dots x 4
+Non-Affinity Contract	 New Dots x 6
+
+** Changing Breeds
+
+Breed Favor	 New Dots x 5
+Non-Breed Favor	 New Dots x 7
+
+** The Cult of Things that Must Not Be
+
+Power [2]	 10 <-- Not in the system; +noted only
+
+** Hunter
+Elixir	 Dots <-- what?
+Rite of Denial	 5 <-- ???
+Gutter Magic Mystery	8
+Gutter Magic Spell	New Dots x 3
+
+** Geist
+Ceremony (Mentored) [3]	 Dots x 2
+Ceremony (Self-Taught) [3]	Dots x 3
+
+** Mage
+Ruling Arcanum	 New Dots x 6
+Common Arcanum	 New Dots x 7
+Inferior Arcanum	 New Dots x 8
+
+** Possessed
+Vestment	 10 <-- Flat? Yes: rating is minimum 'vice' required
+
+** Purified
+Chi	 New Dots x 8
+
+** Siten Uzu <-- Skinchangers, fox spirits co-habitating bodies
+Siten Uzu Attribute	New Dots x 3
+Aspect	Dots x 6
+
+** Skinthieves
+Aspect	 New Dots x 5
+
+** Vampire
+Coils, Cruac, Theban [5]	 New Total Dots x 7
+Blood Sorcery Ritual	 Dots x 2 <-- where is this?
+Devotion	 Refer to Devotion <-- this doesn't help!
+Fontal Ritual	 5 <-- where is this?
+Protean 2 & 4 / Web Variant	 3 <-- ?!?!?!?!
+
+** Ghouls
+In-Clan Discipline	 New Dots x 10
+Out-of-Clan Discipline	 New Dots x 14
+
+** Werewolf
+Affinity Gift[6] / Rituals	 New Dots x 5
+Non-Affinity Gift[6]	 New Dots x 7
+Primary Renown	 New Dots x 6
+Other Renown	 New Dots x 8
+
+** Numina
+
+Numina are skipped because they're limited and treated differently all across the board.
+
+=-=-=--=-=-==-
+
+LIST_CLAN: 
+
+Daeva: Celerity, Majesty, Vigor
+Gangrel: Animalism, Protean, Resilience
+Mekhet: Auspex, Celerity, Obfuscate
+Nosferatu: Nightmare, Obfuscate, Vigor
+Ventrue: Animalism, Dominate, Resilience
+
+
+-=-=-=-=-=-=-=
+LIST_BLOODLINE: 
+
+Adrestoi
+Adroanzi
+Agonistes
+Ahemait
+Alucinor
+Amara_Havana
+Angustri
+Annunaku
+Anvari
+Apollinaire
+Architect_of_the_Monolith
+Architects_of_the_Monolith
+Asnam
+Azerkatil
+Baddacelli
+Bak-Ra
+Barjot
+Bohagande
+Bron
+Brothers_of_Ypres
+Bruja
+Burakumin
+Calacas
+Californian_Xiao
+Canda_Bhanu
+Caporetti
+Carnival
+Carnon
+Childer_of_the_Morrigan
+Children_of_Judas
+Children_of_the_Phoenix
+Cimitiere
+Corajoso
+Csalad
+Csejthe
+Dead_Wolves
+Deucalion
+Dragolescu
+Duchagne
+Empusae
+En
+Erzsebet
+Eupraxus
+Galloi
+Geheim
+Gethsemani
+Gorgons
+Gulikan
+Hollow_Bloodline
+Hounds_of_Actaeon
+Icarians
+Iltani
+Kallisti
+Khaibit
+Kinnaree
+Kuufukuji
+Larvae
+Les_Gens_Libres
+Libitinarius
+Licinii
+Lygos
+Lynx
+Mabry
+Macellarius
+Malintzin
+Malkavian
+Malkovian
+Malocusians
+Mara
+Mayarap
+Melissidae
+Mnemosyne
+Morbus
+Moroi
+Morotrophians
+Mortifiers_of_the_Flesh
+Mystikoi
+Naditu
+Nahualli
+Nelapsi
+Nepheshim
+Noctuku
+Noktuku
+None
+Norvegi
+Oberlochs
+Order_of_Sir_Martin
+Osites
+Players
+Qedeshah
+Rakshasa
+Rotgrafen
+Sangiovanni
+Septemi
+Shepherds
+Sons_of_Cade
+Sotoha
+Spina
+Sta-Au
+Taifa
+Telamones
+The_Cockscomb_Society
+The_Mara
+Therion
+Tianpan_Xiao
+Tismanu
+Toreador
+Usiri
+Vedma
+Yagnatia
+Zelani
+
+
+@@ LIST_AUSPICE: Cahalith Elodoth Irraka Ithaeur Rahu
+
+@@ LIST_TRIBE: Blood_Talons Bone_Shadows Ghost_Wolves Hunters_in_Darkness 
+@@ Iron_Masters Storm_Lords Fire-Touched Ivory_Claws Predator_Kings
+
+
+&f.affinity.werewolf.Agony #14370=u( f.has-affinity, %0, Predator_Kings, social )
+
+&f.affinity.werewolf.Alpha #14370=u( f.has-affinity, %0, Storm_Lords, social )
+
+&f.affinity.werewolf.Battle #14370=u( f.has-affinity, %0, Blood_Talons, social )
+
+&f.affinity.werewolf.Blending #14370=u( f.has-affinity, %0, Iron_Masters, social )
+
+&f.affinity.werewolf.Blood #14370=@@( None )
+
+&f.affinity.werewolf.Bone #14370=@@( None )
+
+&f.affinity.werewolf.City #14370=@@( Lodge of Spires )
+
+&f.affinity.werewolf.Crescent-Moon #14370=if( u( f.has-affinity, %0, Ithaeur, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Cunning #14370=if( u( f.has-affinity, %0, Irraka, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Darkness #14370=@@( None )
+
+&f.affinity.werewolf.Death #14370=u( f.has-affinity, %0, Bone_Shadows, social )
+
+&f.affinity.werewolf.Disease #14370=u( f.has-affinity, %0, Fire-Touched, social )
+
+&f.affinity.werewolf.Dominance #14370=cor( u( f.has-affinity, %0, Rahu, inherited ), u( f.has-affinity, %0, Storm_Lords, social ))
+
+&f.affinity.werewolf.Dreamer's_Moon #14370=if( u( f.has-affinity, %0, Cahalith, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Eclipse #14370=if( u( f.has-affinity, %0, Bale_Hounds, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Elemental #14370=cor( u( f.has-affinity, %0, Ithaeur, inherited ), u( f.has-affinity, %0, Hunters_in_Darkness, social ))
+
+&f.affinity.werewolf.Ending #14370=u( f.has-affinity, %0, Bone_Shadows, social )
+
+&f.affinity.werewolf.Endurance #14370=@@( None )
+
+&f.affinity.werewolf.Evasion #14370=cor( u( f.has-affinity, %0, Irraka, inherited ), u( f.has-affinity, %0, Storm_Lords, social ))
+
+&f.affinity.werewolf.Father-Wolf #14370=1
+
+&f.affinity.werewolf.Fervor #14370=u( f.has-affinity, %0, Fire-Touched, social )
+
+&f.affinity.werewolf.Full-Moon #14370=if( u( f.has-affinity, %0, Rahu, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Gibbous-Moon #14370=if( u( f.has-affinity, %0, Cahalith, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Glory #14370=if( u( f.has-affinity, %0, Cahalith, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Grotto #14370=@@( Lodge of the Grotto )
+
+&f.affinity.werewolf.Halcyon #14370=u( f.has-affinity, %0, Storm_Lords, social )
+
+&f.affinity.werewolf.Half-Moon #14370=if( u( f.has-affinity, %0, Elodoth, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Honor #14370=if( u( f.has-affinity, %0, Elodoth, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Information #14370=@@( Lodge of Wires )
+
+&f.affinity.werewolf.Insight #14370=cor( u( f.has-affinity, %0, Elodoth, inherited ), u( f.has-affinity, %0, Bone_Shadows, social ))
+
+&f.affinity.werewolf.Inspiration #14370=cor( u( f.has-affinity, %0, Cahalith, inherited ), u( f.has-affinity, %0, Blood_Talons, social ))
+
+&f.affinity.werewolf.Judge's_Moon #14370=if( u( f.has-affinity, %0, Elodoth, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Knowledge #14370=cor( u( f.has-affinity, %0, Cahalith, inherited ), u( f.has-affinity, %0, Iron_Masters, social ))
+
+&f.affinity.werewolf.Mother-Luna #14370=1
+
+&f.affinity.werewolf.Nature #14370=u( f.has-affinity, %0, Hunters_in_Darkness Predator_Kings, social )
+
+&f.affinity.werewolf.New-Moon #14370=if( u( f.has-affinity, %0, Irraka, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Opening #14370=@@( Lodge of Doors )
+
+&f.affinity.werewolf.Pack #14370=@@( None )
+
+&f.affinity.werewolf.Predator #14370=u( f.has-affinity, %0, Predator_Kings, social )
+
+&f.affinity.werewolf.Purity #14370=if( u( f.has-affinity, %0, Rahu, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Rage #14370=u( f.has-affinity, %0, Blood_Talons Predator_Kings, social )
+
+&f.affinity.werewolf.Retribution #14370=@@( Lodge of Wrath )
+
+&f.affinity.werewolf.Scheherazade #14370=if( u( f.has-affinity, %0, Cahalith, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Scourging #14370=u( f.has-affinity, %0, Ivory_Claws, social )
+
+&f.affinity.werewolf.Shaping #14370=cor( u( f.has-affinity, %0, Ithaeur, inherited ), u( f.has-affinity, %0, Iron_Masters, social ))
+
+&f.affinity.werewolf.Silver_Road #14370=3.5
+
+&f.affinity.werewolf.Stalker's_Moon #14370=if( u( f.has-affinity, %0, Irraka, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Stalking #14370=u( f.has-affinity, %0, Hunters_in_Darkness, social )
+
+&f.affinity.werewolf.Stealth #14370=cor( u( f.has-affinity, %0, Irraka, inherited ), u( f.has-affinity, %0, Hunters_in_Darkness, social ))
+
+&f.affinity.werewolf.Strength #14370=cor( u( f.has-affinity, %0, Rahu, inherited ), u( f.has-affinity, %0, Blood_Talons Predator_Kings, social ))
+
+&f.affinity.werewolf.Tainted_Moon #14370=if( u( f.has-affinity, %0, Bale_Hounds, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Technology #14370=u( f.has-affinity, %0, Iron_Masters, social )
+
+&f.affinity.werewolf.Territory #14370=3.5
+
+&f.affinity.werewolf.Urban #14370=u( f.has-affinity, %0, Iron_Masters, social )
+
+&f.affinity.werewolf.War #14370=3.5
+
+&f.affinity.werewolf.Warding #14370=cor( u( f.has-affinity, %0, Elodoth, inherited ), u( f.has-affinity, %0, Bone_Shadows Ivory_Claws, social ))
+
+&f.affinity.werewolf.Warrior's_Moon #14370=if( u( f.has-affinity, %0, Rahu, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Weakness #14370=@@( None )
+
+&f.affinity.werewolf.Weather #14370=u( f.has-affinity, %0, Storm_Lords, social )
+
+&f.affinity.werewolf.Wisdom #14370=if( u( f.has-affinity, %0, Ithaeur, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Witch's_Moon #14370=if( u( f.has-affinity, %0, Ithaeur, inherited ), 1, 3.5 )
+
+&f.affinity.werewolf.Wolfslayer #14370=if( u( f.has-affinity, %0, Fire-Touched Ivory_Claws Predator_Kings, social ), 0, 3.5 )
+
+&f.affinity.werewolf.Wound #14370=3.5
