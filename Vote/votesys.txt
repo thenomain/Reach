@@ -50,12 +50,14 @@
 @	CMD.VOTE.VIEW
 @	Passed: Nothing
 @	Returns: View a specific issue
-&CMD.VOTE.VIEW #18091=$+vote *:@break [t(after(%0,=))];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bThat ID doesn't match any current vote.};@if [hasattr(me,DATA_%0_VIEWERS)]=[set(me,DATA_%0_VIEWERS:[setunion(xget(me,DATA_%0_VIEWERS),%#)])],[set(me,DATA_%0_VIEWERS:%#)][set(me/DATA_%0_VIEWERS,Wizard)];@assert [u(F.UNLOCKED,%#)][cor(match(%qG,%0),match(%vd,%#))]={@pemit %#=[ansi(hw,VOTE:)]%bYou aren't authorized to view vote %0.};@pemit %#=[header(Vote %0)]%R%B[center([ansi(hw,[extract(xget(me,VOTE_%0),1,1,|)])],77,[ansi(hx,-)])]%R%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,OPTIONS)],77,[ansi(hx,-)])]%R[iter(lattr(me/OPTIONS_%0*),[ljust([last(%i0,_)],25)][ljust([xget(me,%i0)],50)]%R, ,@@)]%R[footer()]
+&CMD.VOTE.VIEW #18091=$+vote *:@break [t(after(%0,=))];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bThat ID doesn't match any current vote.};@assert [u(F.UNLOCKED,%#)][cor(match(%qG,%0),match(%vd,%#))]={@pemit %#=[ansi(hw,VOTE:)]%bYou aren't authorized to view vote %0.};@if [hasattr(me,DATA_%0_VIEWERS)]=[set(me,DATA_%0_VIEWERS:[setunion(xget(me,DATA_%0_VIEWERS),%#)])],[set(me,DATA_%0_VIEWERS:%#)][set(me/DATA_%0_VIEWERS,Wizard)];@pemit %#=[header(Vote %0)]%R%B[center([ansi(hw,[extract(xget(me,VOTE_%0),1,1,|)])],77,[ansi(hx,-)])]%R%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,OPTIONS)],77,[ansi(hx,-)])]%R[iter(lattr(me/OPTIONS_%0*),[ljust([last(%i0,_)],25)][ljust([xget(me,%i0)],50)]%R, ,@@)]%R[footer()]
 
 @	CMD.VOTE.ADD
 @	Passed: Title,Description
 @	Purpose: Addes a vote to the system
-&CMD.VOTE.ADD #18091=$+vote/add */*:@assert [isstaff(%#)];@assert [t(%0)]={@pemit %#=[ansi(hw,VOTE:)]%bYou didn't specify a title.};[set(me,VOTE_[setr(a,xget(me,DATA.CID))]:%0|%1)][set(me,DATA.CID:[inc(%qA)])][set(me,LOCK_%qA_UNLOCKED:1)];@pemit %#=[ansi(hw,VOTE:)]%bAdded vote %qA with title %0
+&CMD.VOTE.ADD #18091=$+vote/add */*:@assert [isstaff(%#)];@assert [t(%0)]={@pemit %#=[ansi(hw,VOTE:)]%bYou didn't specify a title.};[set(me,VOTE_[setr(a,xget(me,DATA.CID))]:%0|%1)][set(me,DATA.CID:[inc(%qA)])][set(me,LOCK_%qA_UNLOCKED:1)][set(me,LOCK_%qA_STAFF:[u(#13181/F.Determine.Splat,%#)])];@pemit %#=[ansi(hw,VOTE:)]%bAdded vote %qA with title %0
+
+[if(t([u(#13181/F.Determine.Splat,%#)]),
 
 @	CMD.VOTE.SET
 @	Passed: ID,Option,Value
@@ -131,7 +133,7 @@
 @	F.DISP.VOTES
 @	Passed: Player DBRef
 @	Returns: List of issues player has to vote on
-&F.DISP.VOTES #18091=[u(F.UNLOCKED,%0)][if(gt(words(%qG),0),[header(VoteSys)]%R[ljust(ID,5)][ljust(TITLE,51)]%b[ljust(TIME REMAINING,19)]%R%b[repeat([ansi(nr,-)],76)]%b%R[iter(%qG,[if(cand(isstaff(%#),member(%qG,%i0)),*,%b)][ljust(%i0,4)][ljust(extract(xget(me,VOTE_##),1,1,|),51)]%b[ljust([if(hasattr(me,DATA_##_DUE),[u(#637/F.DATEDIFF,[xget(me,DATA_##_DUE)])],No Due Date)],19)][rjust([if(member(xget(me,DATA_##_VOTERS),%0),Y,N)],2)], ,%R)]%R[footer()],[ansi(hw,VOTE:)]%bThere are currently no issues to vote on.)]
+&F.DISP.VOTES #18091=[u(F.UNLOCKED,%0)][setq(d,t(match(%vd,%0)))][if(gt(words(%qG),0),[header(VoteSys)]%R[ljust(ID,5)][ljust(TITLE,51)]%b[ljust(TIME REMAINING,19)]%R%b[repeat([ansi(nr,-)],76)]%b%R[iter([if(%qD,%qH,%qG)],[if(cand(isstaff(%#),member(%qG,%i0)),*,%b)][ljust(%i0,4)][ljust(extract(xget(me,VOTE_##),1,1,|),51)]%b[ljust([if(hasattr(me,DATA_##_DUE),[u(#637/F.DATEDIFF,[xget(me,DATA_##_DUE)])],No Due Date)],19)][rjust([if(member(xget(me,DATA_##_VOTERS),%0),Y,N)],2)], ,%R)]%R[footer()],[ansi(hw,VOTE:)]%bThere are currently no issues to vote on.)]
 
 @	F.UNLOCKED
 @	Passed: Player DBRef
@@ -145,7 +147,8 @@
 @	F - List of Unlocked Votes
 @	G - Final List
 @	H - Staff Final List
-&F.UNLOCKED #18091=[setq(A,[lattr(me/LOCK*)])][iter(%qA,[switch([strmatch(%i0,*Blocked)][strmatch(%i0,*Allowed)][strmatch(%i0,*Faction)][strmatch(%i0,*Template)][strmatch(%i0,*Unlocked)],10000,[if(member(xget(me,%i0),%0),[setq(C,[setunion(%qC,[extract(%i0,2,1,_)])])])],01000,[if(member(xget(me,%i0),%0),[setq(B,[setunion(%qB,[extract(%i0,2,1,_)])])])],00100,[if(gt(words(xget(me,%i0)),1),[iter(xget(me,%i0),[if(isfaction?(%0,%i0),[setq(D,[setunion(%qD,[extract(%i1,2,1,_)])])])], ,@@)],[if(isfaction?(%0,[xget(me,%i0)]),[setq(D,[setunion(%qD,[extract(%i0,2,1,_)])])])])],00010,[if(gt(words(xget(me,%i0)),1),[iter(xget(me,%i0),[if(strmatch(template(%0),[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i1,2,1,_)])])],[if(isstaff(%0),[if(match([edit([u(#13181/F.DETERMINE.SPLAT,%0)],Feral,Shifter)],[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i0,2,1,_)])])])])])], ,@@)],[if(strmatch(template(%0),[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i0,2,1,_)])])],[if(isstaff(%0),[if(match([edit([u(#13181/F.DETERMINE.SPLAT,%0)],FERAL,Shifter)],[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i0,2,1,_)])])])])])])],00001,[setq(F,[setunion(%qF,[extract(%i0,2,1,_)])])])], ,@@)][setq(G,[setunion(%qB,%qD)])][setq(G,[setunion(%qG,%qE)])][setq(G,[setunion(%qG,%qF)])][setq(G,[setdiff(%qG,%qC)])][if(isstaff(%0),[iter(%qA,[setq(H,[setunion(%qH,extract(%i0,2,1,_))])], ,@@)])]
+@	I, J - Used by Staff Locks
+&F.UNLOCKED #18091=[setq(A,[lattr(me/LOCK*)])][iter(%qA,[switch([strmatch(%i0,*Blocked)][strmatch(%i0,*Allowed)][strmatch(%i0,*Faction)][strmatch(%i0,*Template)][strmatch(%i0,*Unlocked)][strmatch(%i0,*Staff)],100000,[if(member(xget(me,%i0),%0),[setq(C,[setunion(%qC,[extract(%i0,2,1,_)])])])],010000,[if(member(xget(me,%i0),%0),[setq(B,[setunion(%qB,[extract(%i0,2,1,_)])])])],001000,[if(gt(words(xget(me,%i0)),1),[iter(xget(me,%i0),[if(isfaction?(%0,%i0),[setq(D,[setunion(%qD,[extract(%i1,2,1,_)])])])], ,@@)],[if(isfaction?(%0,[xget(me,%i0)]),[setq(D,[setunion(%qD,[extract(%i0,2,1,_)])])])])],000100,[if(gt(words(xget(me,%i0)),1),[iter(xget(me,%i0),[if(strmatch(template(%0),[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i1,2,1,_)])])],[if(isstaff(%0),[if(match([edit([u(#13181/F.DETERMINE.SPLAT,%0)],Feral,Shifter)],[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i0,2,1,_)])])])])])], ,@@)],[if(strmatch(template(%0),[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i0,2,1,_)])])],[if(isstaff(%0),[if(match([edit([u(#13181/F.DETERMINE.SPLAT,%0)],Feral,Shifter)],[xget(me,%i0)]),[setq(E,[setunion(%qE,[extract(%i0,2,1,_)])])])])])])],000010,[setq(F,[setunion(%qF,[extract(%i0,2,1,_)])])],000001,[setq(I,[xget(me, LOCK_[extract(%i0,2,1,_)]_STAFF)])][setq(J,[u(#13181/F.DETERMINE.SPLAT,%0)])][iter(%qI,[iter(%qJ,[if(match(%i1,%i0),[setq(E,[setunion(%qE,[extract(%i2,2,1,_)])])])], ,@@)], ,@@)])], ,@@)][setq(G,[setunion(%qB,%qD)])][setq(G,[setunion(%qG,%qE)])][setq(G,[setunion(%qG,%qF)])][setq(G,[setdiff(%qG,%qC)])][if(isstaff(%0),[iter(%qA,[setq(H,[setunion(%qH,extract(%i0,2,1,_))])], ,@@)])]
 
 
 
