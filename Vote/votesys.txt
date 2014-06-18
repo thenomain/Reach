@@ -50,11 +50,7 @@
 @	CMD.VOTE.VIEW
 @	Passed: Nothing
 @	Returns: View a specific issue
-<<<<<<< HEAD
-&CMD.VOTE.VIEW #18091=$+vote *:@break [t(after(%0,=))];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bThat ID doesn't match any current vote.};@if [hasattr(me,DATA_%0_VIEWERS)]=[set(me,DATA_%0_VIEWERS:[setunion(xget(me,DATA_%0_VIEWERS),%#)])],[set(me,DATA_%0_VIEWERS:%#)][set(me/DATA_%0_VIEWERS,Wizard)];@assert [u(F.UNLOCKED,%#)][cor(match(%qG,%0),match(%vd,%#))]={@pemit %#=[ansi(hw,VOTE:)]%bYou aren't authorized to view vote %0.};@pemit %#=[header(Vote %0)]%R%B[center([ansi(hw,[extract(xget(me,VOTE_%0),1,1,|)])],77,[ansi(hx,-)])]%R%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,OPTIONS)],77,[ansi(hx,-)])]%R[iter(lattr(me/OPTIONS_%0*),[ljust([last(%i0,_)],25)][ljust([xget(me,%i0)],50)]%R, ,@@)]%R[footer()]
-=======
 &CMD.VOTE.VIEW #18091=$+vote *:@break [t(after(%0,=))];@assert [hasattr(me,VOTE_%0)]={@pemit %#=[ansi(hw,VOTE:)]%bThat ID doesn't match any current vote.};@assert [u(F.UNLOCKED,%#)][cor(match(%qG,%0),match(%vd,%#))]={@pemit %#=[ansi(hw,VOTE:)]%bYou aren't authorized to view vote %0.};@if [hasattr(me,DATA_%0_VIEWERS)]=[set(me,DATA_%0_VIEWERS:[setunion(xget(me,DATA_%0_VIEWERS),%#)])],[set(me,DATA_%0_VIEWERS:%#)][set(me/DATA_%0_VIEWERS,Wizard)];@pemit %#=[header(Vote %0)]%R%B[center([ansi(hw,[extract(xget(me,VOTE_%0),1,1,|)])],77,[ansi(hx,-)])]%R%R[extract(xget(me,VOTE_%0),2,1,|)]%R%R%B[center([ansi(hw,OPTIONS)],77,[ansi(hx,-)])]%R[iter(lattr(me/OPTIONS_%0*),[ljust([last(%i0,_)],25)][ljust([xget(me,%i0)],50)]%R, ,@@)]%R[footer()]
->>>>>>> f305a2400d25617b77e3db677a502d8a71b827af
 
 @	CMD.VOTE.ADD
 @	Passed: Title,Description
