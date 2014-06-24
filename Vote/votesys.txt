@@ -218,6 +218,8 @@
 
 &f.weight.family_status #18091=elements( first( sort( graball( xget( %0, _Merits ), Family_Status~?~%1*, |, | ), a, |), | ), 2, ~ )
 
+&f.weight.status #18091=elements( first( sort( graball( xget( %0, _Merits ), Status~?~%1*, |, | ), a, |), | ), 2, ~ )
+
 &f.weight.faction #18091=elements( lattr( filter( filter.name-from-dbref, lcon( #2832 ), , , %1 )/MEMBER-%0-* ), 3, - )
 
 &filter.name-from-dbref #18091=strmatch( name( %0 ), %1* )
