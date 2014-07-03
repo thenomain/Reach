@@ -533,11 +533,11 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 &xp.potency #14370=u( f.cost.standard, 8, %2, %3 )
 &xp.discipline #14370=u( f.cost.standard, case( template( %0 ), Vampire, 7, Ghoul, 14, 0 ), %2, %3 )
 
-&xp.discipline.coil_of_banes #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
-&xp.discipline.coil_of_blood #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
-&xp.discipline.coil_of_flesh #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
-&xp.discipline.coil_of_the_beast #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
-&xp.discipline.coil_of_the_soul #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_banes #14370=u( f.cost.standard, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_blood #14370=u( f.cost.standard, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_flesh #14370=u( f.cost.standard, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_the_beast #14370=u( f.cost.standard, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_the_soul #14370=u( f.cost.standard, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
 
 @@ .. 'theban' is limited by the Theban trait
 &xp.discipline.theban_sorcery #14370=u( f.cost.standard, 7, %2, %3 )
