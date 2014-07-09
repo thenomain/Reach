@@ -399,7 +399,7 @@ z: player's current value
 
 --
 
-&D.NO-VALUE.CLASSES XP Request Validation System <xrvs>=benediction devotion numina tactic gift
+&D.NO-VALUE.CLASSES XP Request Validation System <xrvs>=benediction devotion numina tactic gift key
 
 &D.DONT-DISPLAY-LEVEL.CLASSES XP Request Validation System <xrvs>=benediction ceremonies devotion elixir gift goblin numina rite ritual rote tactic theban vestment
 
