@@ -265,7 +265,11 @@ x: estimated xp cost
 		if( cand( eq( %6, 0 ), strlen( %6 )), !), 
 		lcstr( %1 ), 
 		case( 1, 
+			t( match( v( d.dont-display-level.classes ), %0 )), 
+			@@( eat the level ), 
+
 			t( %6 ), :%6, 
+
 			cand( eq( %6, 0 ), strlen( %6 )), :%5 
 		), 
 		if( t( %2 ), 
