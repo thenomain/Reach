@@ -87,30 +87,24 @@ UPDATE: We're dealing with it by not dealing with it. Let the system find the ac
 
 0: player dbref
 1: get( <species database>/<species>.<form>.offsets ) -- attribute:[+|-]value
-returns: <results for _form.offsets>|<results for _atmodified>
+returns: results for new _form.offsets
 
-c: current attributes << not needed? >>
-f: current _form.offsets
 o: offsets to apply for replaced _form.offsets
 
 p: list position of current attribute
 s: sign of offset: +/-/0
-t: current total for attribute: base + modified << not needed ? >>
 a: actual value to offset attribute by
 
 --
 
 &f.build.form.offsets sfs=
 localize( 
-@@ XX	[setq( c, default( %0/_attributes, 1 1 1 1 1 1 1 1 1 ))]
-@@ XX	[setq( f, default( %0/_form.offsets, 0 0 0 0 0 0 0 0 0 ))]
 	[setq( o, 0 0 0 0 0 0 0 0 0 )]
 
 @@ determine attribute offsets to apply
 	[iter( filter( filter.isattribute?, %1 ), 
 		[setq( p, u( f.position.attribute, first( %i0, : )))]
 		[setq( s, u( f.sign, rest( %i0, : )))]
-@@ XX 	[setq( t, add( elements( %qc, %qp ), elements( %qm, %qp )))]
 
 @@ >> determine new offsets
 		[setq( a, 
@@ -125,23 +119,12 @@ localize(
 				), 
 
 @@ .. current calculated offset - previous form offset + requested form offset
-@@ XX (backs out previous form's offset, where applicable)
-				[add( 
+				add( 
 					elements( %qo, %qp ), 
-@@ XX				mul( elements( %qf, %qp ), -1 ), 
 					rest( %i0, : )
-				)]
-@@ .. zero-out previous form's offset: already taken into account
-@@ XX 			[setq( f, replace( %qf, %qp, 0 ))]
-
+				)
 			)
 		)]
-
-@@ XX final attribute (full+modified) cannot be below 1, 
-@@ XX so set offset to attribute's total value - 1
-@@ XX	[if( lt( 1, add( %qa, %qt )), 
-@@ XX		setq( a, sub( %qt, 1 ))
-@@ XX	)]
 
 @@ .. finally, update the current calculated offset
 		[setq( o, replace( %qo, %qp, %qa ))], 
