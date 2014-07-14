@@ -222,3 +222,22 @@
 @	LIT.FOOTER
 @	Footer Literal for Roll. Change this to change the roll footer
 &LIT.FOOTER #18850=[rjust([ansi(hx,> [ansi(hw,%0\[)][itemize(trim([ansi(hx,[if(and(t(%qA),lt(%qA,10)),%qA-Again)][if(t(%qB),%bRote)][if(t(%qX),%bBlind)])]))][if(cand(cor(not(t(%qA)),eq(%qA,10)),not(t(%qB)),not(t(%qX))),[ansi(hx,No Flags)])][ansi(hw,\])] <)],74,[ansi(nr,=)])][ansi(nr,====)]
+
+@	PARSE.STAT.*
+@	%0 - DBREF of target
+@	Returns: Trait value or '0', if not found
+@	
+@	These traits are not in the stat system, but are still recorded, 
+@	or shorthands available for +roll.
+
+&parse.stat.perception #18850=default( %0/_PERMOD, 0 )
+
+&parse.stat.paradox #18850=default( %0/_PARADOX, 0 )
+
+&parse.stat.power #18850=extract( u( #89/[if( strmatch( u( %0/_TEMPLATE ), Purified ), Purified, if( hasattr( %0, _NUMINA ), [if( strmatch( u( %0/_TEMPLATE ), Shifter ), Shifter, Other )], Other ))].spirit.traits ), 1, 1 )
+
+&parse.stat.finesse #18850=extract( u( #89/[if( strmatch( u( %0/_TEMPLATE ), Purified ), Purified, if( hasattr( %0, _NUMINA ), [if( strmatch( u( %0/_TEMPLATE ), Shifter ), Shifter, Other )], Other ))].spirit.traits ), 2, 1 )
+
+&parse.stat.resistance #18850=extract( u( #89/[if( strmatch( u( %0/_TEMPLATE ), Purified ), Purified, if( hasattr( %0, _NUMINA ), [if( strmatch( u( %0/_TEMPLATE ), Shifter ), Shifter, Other )], Other ))].spirit.traits ), 3, 1 )
+
+&parse.stat.mantle #18850=extract( [extract( u( %0/_Merits ), [match( u( %0/_Merits ), Mantle*, | )], 1, | )], 2, 1, ~ )
