@@ -30,6 +30,8 @@ Current form ('null' = human/Hishu):
 == DATA ========================================================================
 
 &d.statfuncs sfs=#89
+&d.stat() sfs=#978
+&d.roller sfs=#18850
 &d.healthfrob sfs=#??? (probably not needed)
 
 
@@ -90,10 +92,14 @@ UPDATE: We're dealing with it by not dealing with it. Let the system find the ac
 returns: results for new _form.offsets
 
 o: offsets to apply for replaced _form.offsets
+f: filtered input for attributes
 
 p: list position of current attribute
 s: sign of offset: +/-/0
 a: actual value to offset attribute by
+
+n: name of non-attribute to check
+z: current player value of same
 
 --
 
@@ -102,13 +108,12 @@ localize(
 	[setq( o, 0 0 0 0 0 0 0 0 0 )]
 
 @@ determine attribute offsets to apply
-	[iter( filter( filter.isattribute?, %1 ), 
+	[iter( setr( f, filter( filter.isattribute?, %1 )), 
 		[setq( p, u( f.position.attribute, first( %i0, : )))]
-		[setq( s, u( f.sign, rest( %i0, : )))]
 
 @@ >> determine new offsets
 		[setq( a, 
-			case( %qs, 
+			case( u( f.sign, rest( %i0, : )), 
 
 @@ .. if direct set, actual = offset - attribute
 @@ .. (to set to 2 from attribute of 5, offset is -3)
@@ -128,6 +133,27 @@ localize(
 
 @@ .. finally, update the current calculated offset
 		[setq( o, replace( %qo, %qp, %qa ))], 
+		, @@ 
+	)]
+
+@@ non-attribute offsets
+	[iter( setdiff( %1, %qf ), 
+		setq( o, 
+			%qo|
+			[case( u( f.sign, rest( %i0, : )), 
+				@@( null ), 
+				[setr( n, first( %i0, : ))]:
+				[setr( z, 
+					if( t( setr( z, u( v( d.stat() )/f.stat, %0, %1 ))), 
+						rest( %qz, : ), 
+						udefault( v( d.roller )/parse.stat.%qn, 0, %0 )
+					)
+				)]
+				[sub( rest( %i0, : ), %qz )], 
+
+				%i0 
+			)] 
+		), 
 		, @@ 
 	)]
 
