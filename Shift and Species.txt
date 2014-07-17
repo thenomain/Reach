@@ -157,7 +157,7 @@ localize(
 		, @@ 
 	)]
 
-@@ Return: Calculated form offsets
+@@ Return: Total form offsets
 	%qo 
 )
 
