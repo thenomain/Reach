@@ -551,7 +551,7 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 
 
 @@ -- werewolf
-&xp.primal-urge #14370=u( f.cost.standard, 8, %1, %2 )
+&xp.primal-urge #14370=u( f.cost.standard, 8, %2, %3 )
 
 @@ 0: dbref
 @@ 1: name of 'me'
