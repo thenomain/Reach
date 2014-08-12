@@ -370,7 +370,7 @@ In a faction authorized for this Lair
 	[ansi( h, TYPE )]: [titlestr( xget( %0, TYPE ))]%r
 	[ansi( h, LOCATION: )] 
 		[case( 
-			setr( l, xget( %0, LOCATION )), 
+			setr( l, ucstr( xget( %0, LOCATION ))), 
 			OFF, OFF, 
 			[name( %ql )] (%ql) : 
 			[ucstr( default( %ql/COORD, << coords unset >> ))]
@@ -390,22 +390,22 @@ In a faction authorized for this Lair
 		[setq( d, xget( %0, Faction ))]
 		[if( t( %qd ), titlestr( edit( %qd, |, %,%b )), ansi( xh, (none) ))]%r
 	%r
-	[ansi( h, CONTRIBUTORS )]:%r
-		[setq( m, 
-			[if( 
-				t( hasattr( %0, contrib.%0 )), 
-				[ansi( n, name( %0 ), xh, %b(lair))]| 
-			)]
-			[iter( 
-				edit( 
-					setdiff( lattr( %0/contrib.* ), CONTRIB.%0 ), 
-					CONTRIB., 
-				), 
-				name( %i0 ), , | 
-			)] 
-		)]
-		[wrap( edit( %qm, |, %,%b ), 73, left, space( 3 ) )]%r
-	%r
+@@	[ansi( h, CONTRIBUTORS )]:%r
+@@		[setq( m, 
+@@			[if( 
+@@				t( hasattr( %0, contrib.%0 )), 
+@@				[ansi( n, name( %0 ), xh, %b(lair))]| 
+@@			)]
+@@			[iter( 
+@@				edit( 
+@@					setdiff( lattr( %0/contrib.* ), CONTRIB.%0 ), 
+@@					CONTRIB., 
+@@				), 
+@@				name( %i0 ), , | 
+@@			)] 
+@@		)]
+@@		[wrap( edit( %qm, |, %,%b ), 73, left, space( 3 ) )]%r
+@@	%r
 	[ansi( h, TRAITS )]:%r
 	[u( disp.lair.trait.aggregate, %0 )]
 
