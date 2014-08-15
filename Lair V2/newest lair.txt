@@ -779,7 +779,7 @@ contributions. May need to use lair's dbref if collides with a name.
 --------------------------------------------------------------------------------
 -- COMMAND: Lair/Con (contribute something to a lair) --------------------------
 
-&CMD.LAIR.CONTRIBUTION #14800=$^\+lairs?/con (.+?)/(.?+)=(.+)$:
+&CMD.LAIR.CONTRIBUTION #14800=$^\+lairs?/con (.+?)/(.+?)=(.+)$:
 	@assert isstaff( %# )={ 
 		@pemit  %#=[ansi( hr, LAIR: )] Staff Only. 
 	}; 
