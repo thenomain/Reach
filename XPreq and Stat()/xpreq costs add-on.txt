@@ -392,7 +392,7 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 == DATA ========================================================================
 
 @@ 0: dbref of target
-@@ 1: name of trait (used only for gifts, for now)
+@@ 1: name of trait (used for gifts and favors)
 @@ 2: from
 @@ 3: to
 @@ 4: valid levels list, if applicable
@@ -476,7 +476,7 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 
 &xp.feral-heart #14370=u( f.cost.standard, 8, %2, %3 )
 &xp.aspects #14370=u( f.cost.no-phantom-dots, 5, %2, %3, %4 )
-&xp.favor #14370=u( f.cost.standard, 7, %2, %3 )
+&xp.favor #14370=u( f.cost.standard, add( 7, mul( -2, u( f.affinity.shifter.%1, %0 ))), %2, %3 )
 &xp.renown #14370=u( f.cost.standard, case( template( %0 ), Shifter, 6, Werewolf, 8, 0 ), %2, %3 )
 
 
@@ -523,21 +523,23 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 &xp.vice-power #14370=u( f.cost.standard, 10, %2, %3 )
 &xp.vestment #14370=10
 
+
 @@ -- purified (immortal)
 &xp.chi #14370=u( f.cost.standard, 8, %2, %3 )
 &xp.siddhi #14370=u( f.cost.standard, 7, %2, %3 )
 &xp.numen #14370=10
+
 
 @@ -- vampire
 @@ &xp.blood-potency #14370=u( f.cost.standard, 8, %2, %3 )
 &xp.potency #14370=u( f.cost.standard, 8, %2, %3 )
 &xp.discipline #14370=u( f.cost.standard, case( template( %0 ), Vampire, 7, Ghoul, 14, 0 ), %2, %3 )
 
-&xp.discipline.coil_of_banes #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
-&xp.discipline.coil_of_blood #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
-&xp.discipline.coil_of_flesh #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
-&xp.discipline.coil_of_the_beast #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
-&xp.discipline.coil_of_the_soul #14370=u( f.cost.direct, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_banes #14370=u( f.cost.standard, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_blood #14370=u( f.cost.standard, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_flesh #14370=u( f.cost.standard, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_the_beast #14370=u( f.cost.standard, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
+&xp.discipline.coil_of_the_soul #14370=u( f.cost.standard, case( template( %0 ), Vampire, 8, 0 ), %2, %3 )
 
 @@ .. 'theban' is limited by the Theban trait
 &xp.discipline.theban_sorcery #14370=u( f.cost.standard, 7, %2, %3 )
@@ -549,7 +551,7 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 
 
 @@ -- werewolf
-&xp.primal-urge #14370=u( f.cost.standard, 8, %1, %2 )
+&xp.primal-urge #14370=u( f.cost.standard, 8, %2, %3 )
 
 @@ 0: dbref
 @@ 1: name of 'me'
@@ -559,12 +561,10 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 
 &xp.gift #14370=switch( template( %0 ), Werewolf, u( f.cost.gift.werewolf, %0, %2, %4, %1 ), Shifter, u( f.cost.direct, 5, %2, add( %4, max( 0, sub( %4, 3 )))), 0 )
 
-
 @@ f.cost.gift.werewolf, %0, %2, %4, <auspices>, <tribes>
 @@ except that gift format is:
 @@       <gift name> (<gift category>)
 @@ e.g.: Primal Form (Mother-Luna)
-
 
 &xp.gift.rituals_1 #14370=5
 &xp.gift.rituals_2 #14370=10
@@ -574,6 +574,7 @@ think u( #14370/f.input.break-apart, specialty/brawl:test test=This is just a te
 
 &xp.rite #14370=u( f.cost.direct, 2, %2, %3 )
 &xp.merit.totem #14370=u( f.cost.single, 3, %2, %3 )
+
 
 
 ================================================================================
@@ -613,7 +614,7 @@ returns: 1 if true
 
 &f.has-affinity #14370=
 	t( setinter( 
-		lcstr( last( axis( %0, %2 ), : )), 
+		lcstr( last( edit( axis( %0, %2 ), %b, _ ), : )), 
 		lcstr( %1 )
 	))
 
@@ -644,7 +645,7 @@ returns: 1 if true
 		%2 
 	)
 
-@@ &f.cost.discipline #14370=u( f.cost.discipline.[template( %0) ], )
+@@ &f.cost.discipline #14370=u( f.cost.discipline.[template( %0 )], )
 
 @@ &f.cost.discipline.ghoul #14370=u( f.cost.standard, add( 14, mul( -4, u( f.has-affinity, %0, %3, inherited ))), %1, %2 )
 
@@ -656,6 +657,9 @@ returns: 1 if true
 
 @@ &f.affinity.werewolf.<gift category> #14370=<affinity check, 0 or 1 or 3.5>
 @@ 3.5 is to turn '7 + (-2 * <num>)' into 0, making it non-purchasable
+
+&f.cost.favor #14370=u( f.cost.standard, add( 7, mul( -2, u( f.affinity.shifter.%3, %0 ))), %1, %2 )
+
 
 
 -=-=--=
@@ -989,3 +993,32 @@ Zelani
 &f.affinity.werewolf.Wolfslayer #14370=if( u( f.has-affinity, %0, Fire-Touched Ivory_Claws Predator_Kings, social ), 0, 3.5 )
 
 &f.affinity.werewolf.Wound #14370=3.5
+
+=--=-=-=-=-=-=-=-=-=-=-=-=-==--=-=
+
+
+list of breed favors:
+
+
+&f.affinity.shifter.Aquatic #14370=u( f.has-affinity, %0, Kinno'Balo, inherited )
+
+&f.affinity.shifter.Bioluminescence #14370=u( f.has-affinity, %0, Fishfolk, inherited )
+
+&f.affinity.shifter.Darksight #14370=u( f.has-affinity, %0, Archunem Baitu Minjur Mistai Reynard Wapathemwa Maerans Kinno'Balo Melusinae Nanekisu Sicarius Vagahuir Qualm'a_Ni The_Colony, inherited )
+
+&f.affinity.shifter.Echolocation #14370=u( f.has-affinity, %0, Fishfolk, inherited )
+
+&f.affinity.shifter.Extra_Limbs #14370=u( f.has-affinity, %0, Whiskey_Croc Gregor, inherited )
+
+&f.affinity.shifter.Fang_and_Claw #14370=u( f.has-affinity, %0, Vagahuir, inherited )
+
+&f.affinity.shifter.Natural_Armor #14370=u( f.has-affinity, %0, Nanekisu Sicarius, inherited )
+
+&f.affinity.shifter.Needleteeth #14370=u( f.has-affinity, %0, Fishfolk, inherited )
+
+&f.affinity.shifter.Razorskin #14370=u( f.has-affinity, %0, Fishfolk Whiskey_Croc, inherited )
+
+&f.affinity.shifter.Size #14370=u( f.has-affinity, %0, Whiskey_Croc Olutakami Hugranjah Yumni Nanuq Yonah Alces Takuskansa Flidaisin Corvian, inherited )
+
+&f.affinity.shifter.Webbing #14370=u( f.has-affinity, %0, Nanekisu, inherited )
+

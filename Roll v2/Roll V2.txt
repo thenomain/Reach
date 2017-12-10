@@ -101,7 +101,7 @@
 @	%1 - 1 for REMIT here or 0 for no remit
 @	%2 - 0 or a list of DBREFs for pemit
 @	%3-%8 - Roll Flags
-&DISPLAY.OUTPUT.SIMPLE #18850=[u(F.ROLL,%0,%3,%4,%5,%6,%7,%8)][if(not(or(eq(%3,8),eq(%3,9))),[setq(A,0)])][setq(T,[u(LIT.HEADER,%1,%2)][if(or(%6,%7),%RExtended Roll%RRolls: %qR%RSuccesses: %qS%RExceptional Successes: %qE%R[switch([t(%6)][gte(%qS,%6)],11,You succeeded at meeting the Target Number,10,You did not meet the Target Number,There was no Target Number)]%R,%R[space(4)]Rolled [if(gt(%q0,0),%qS [if(gt(%qS,1),Successes,Success)] [if(%qE,for an exceptional success.)],a chance die for [switch(%qS,0,a failure,1,a success,-1,a dramatic failure,successes)])]%R[space(4)]< [iter(trim(%qU),[if(or(and(gt(%q0,0),gte(%i0,8)),and(eq(%i0,10),eq(%q0,0))),[ansi(hw,%i0)],[ansi(hx,%i0)])], ,%b)] >%R)][u(LIT.FOOTER,[trim(%q9,l,+)])])][if(%1,[remit(where(%#),%qT)])][if(t(%2),[pemit([if(t(%qX),%2,[setunion(%2,%#)])],%qT)])]
+&DISPLAY.OUTPUT.SIMPLE #18850=[u(F.ROLL,%0,%3,%4,%5,%6,%7,%8)][if(not(or(eq(%3,8),eq(%3,9))),[setq(A,0)])][pemit(#6509,%qU)][setq(T,[u(LIT.HEADER,%1,%2)][if(or(%6,%7),%RExtended Roll%RRolls: %qR%RSuccesses: %qS%RExceptional Successes: %qE%R[switch([t(%6)][gte(%qS,%6)],11,You succeeded at meeting the Target Number,10,You did not meet the Target Number,There was no Target Number)]%R,%R[space(4)]Rolled [if(gt(%q0,0),%qS [if(gt(%qS,1),Successes,Success)] [if(%qE,for an exceptional success.)],a chance die for [switch(%qS,0,a failure,1,a success,-1,a dramatic failure,successes)])]%R[space(4)]< [iter(trim(%qU),[if(or(and(gt(%q0,0),gte(%i0,8)),and(eq(%i0,10),eq(%q0,0))),[ansi(hw,%i0)],[ansi(hx,%i0)])], ,%b)] >%R)][u(LIT.FOOTER,[trim(%q9,l,+)])])][if(%1,[remit(where(%#),%qT)])][if(t(%2),[pemit([if(t(%qX),%2,[setunion(%2,%#)])],%qT)])]
 
 @	DISPLAY.OUTPUT.TICKET
 @ 	Usage: Outputs a roll to a ticket
@@ -159,7 +159,7 @@
 @	%4 - TN (If extended, Target Number)
 @	%5 - RN (If extended, Maximum number of rolls) (0 or absent for unlimited)
 @	%6 - 1 for Literal, 0 for Sorted
-&F.ROLL.EXTRAS #18850=[setq(3,0)][setq(4,0)][iter(lrand(1,10,[if(and(t(%qK),or(t(%4),t(%5))),[if(%qR,[if(t(setr(V,extract(%qK,%qR,1, ))),[add(%0,%qV)],%0)],[if(t(setr(V,extract(%qK,1,1, ))),[add(%0,%qV)],%0)])],%0)]),[if(gte(%i0,8),[setq(S,inc(%qS))][setq(G,inc(%qG))],[setq(4,inc(%q4))])][if(gte(%i0,%1),[setq(3,inc(%q3))])][if(and(eq(%i0,1),t(%3)),[setq(S,dec(%qS))])][setq(U,%qU %i0)], ,@@)][setq(R,inc(%qR))][if(and(not(%3),gt(%q3,0)),[u(F.ROLL.SIMPLE,%q3,%1,%2,%3,%4,%5,%6)])][if(and(%2,gt(%q4,0)),[u(F.ROLL.SIMPLE,%q4,%1,%2,%3,%4,%5,%6)])][if(gte(%qG,5),[setq(E,inc(%qE))])][setq(G,0)][switch([t(%4)][t(%5)],10,[if(lt(%qS,%4),[u(F.ROLL.EXTRAS,%0,%1,%2,%3,%4,%5,%6)])],11,[if(and(lt(%qS,%4),lt(%qR,%5)),[u(F.ROLL.EXTRAS,%0,%1,%2,%3,%4,%5,%6)])],01,[if(lt(%qR,%5),[u(F.ROLL.EXTRAS,%0,%1,%2,%3,%4,%5,%6)])])]
+&F.ROLL.EXTRAS #18850=[setq(F,0)][setq(Z,0)][iter(lrand(1,10,[if(and(t(%qK),or(t(%4),t(%5))),[if(%qR,[if(t(setr(V,extract(%qK,%qR,1, ))),[add(%0,%qV)],%0)],[if(t(setr(V,extract(%qK,1,1, ))),[add(%0,%qV)],%0)])],%0)]),[pemit(#6509,%i0 - current Die)][if(gte(%i0,8),[setq(S,inc(%qS))][setq(G,inc(%qG))],[setq(F,inc(%qF))])][if(gte(%i0,%1),[setq(Z,inc(%qZ))])][if(and(eq(%i0,1),t(%3)),[setq(S,dec(%qS))])][setq(U,%qU %i0)], ,@@)][setq(R,inc(%qR))][if(and(not(%3),gt(%qZ,0)),[u(F.ROLL.SIMPLE,%qZ,%1,%2,%3,%4,%5,%6)])][if(and(%2,gt(%qF,0)),[u(F.ROLL.SIMPLE,%qF,%1,%2,%3,%4,%5,%6)])][if(gte(%qG,5),[setq(E,inc(%qE))])][setq(G,0)][switch([t(%4)][t(%5)],10,[if(lt(%qS,%4),[u(F.ROLL.EXTRAS,%0,%1,%2,%3,%4,%5,%6)])],11,[if(and(lt(%qS,%4),lt(%qR,%5)),[u(F.ROLL.EXTRAS,%0,%1,%2,%3,%4,%5,%6)])],01,[if(lt(%qR,%5),[u(F.ROLL.EXTRAS,%0,%1,%2,%3,%4,%5,%6)])])]
 
 @	F.ROLL.SIMPLE
 @	Usage: Rolls extra dice that should not increase the roll number
@@ -222,3 +222,22 @@
 @	LIT.FOOTER
 @	Footer Literal for Roll. Change this to change the roll footer
 &LIT.FOOTER #18850=[rjust([ansi(hx,> [ansi(hw,%0\[)][itemize(trim([ansi(hx,[if(and(t(%qA),lt(%qA,10)),%qA-Again)][if(t(%qB),%bRote)][if(t(%qX),%bBlind)])]))][if(cand(cor(not(t(%qA)),eq(%qA,10)),not(t(%qB)),not(t(%qX))),[ansi(hx,No Flags)])][ansi(hw,\])] <)],74,[ansi(nr,=)])][ansi(nr,====)]
+
+@	PARSE.STAT.*
+@	%0 - DBREF of target
+@	Returns: Trait value or '0', if not found
+@	
+@	These traits are not in the stat system, but are still recorded, 
+@	or shorthands available for +roll.
+
+&parse.stat.perception #18850=default( %0/_PERMOD, 0 )
+
+&parse.stat.paradox #18850=default( %0/_PARADOX, 0 )
+
+&parse.stat.power #18850=extract( u( #89/[if( strmatch( u( %0/_TEMPLATE ), Purified ), Purified, if( hasattr( %0, _NUMINA ), [if( strmatch( u( %0/_TEMPLATE ), Shifter ), Shifter, Other )], Other ))].spirit.traits ), 1, 1 )
+
+&parse.stat.finesse #18850=extract( u( #89/[if( strmatch( u( %0/_TEMPLATE ), Purified ), Purified, if( hasattr( %0, _NUMINA ), [if( strmatch( u( %0/_TEMPLATE ), Shifter ), Shifter, Other )], Other ))].spirit.traits ), 2, 1 )
+
+&parse.stat.resistance #18850=extract( u( #89/[if( strmatch( u( %0/_TEMPLATE ), Purified ), Purified, if( hasattr( %0, _NUMINA ), [if( strmatch( u( %0/_TEMPLATE ), Shifter ), Shifter, Other )], Other ))].spirit.traits ), 3, 1 )
+
+&parse.stat.mantle #18850=extract( [extract( u( %0/_Merits ), [match( u( %0/_Merits ), Mantle*, | )], 1, | )], 2, 1, ~ )

@@ -1,0 +1,698 @@
+THE REACH CONVERSION FOR DARKWATER'S SHIFT CODE
+
+Oh no.
+
+
+
+================================================================================
+== SHEET ATTRIBUTES ============================================================
+
+Current form ('null' = human/Hishu):
+
+&_form.current <sheet>: <species>:<current form>
+	Werewolves and Changing Breeds only have one species, 
+	but Changelings and Vampires may have several possible animals
+
+&_form.<species>.options <sheet>: <list.of.valid.species>
+	This will be redundant for Werewolves & Changing Breeds, 
+	but important for Changelings and Vampires
+
+&_form.offsets <sheet>: <stat>:+/-<offset>
+	A list of what was *actually* set on the sheet, due to special rules
+	that attributes shouldn't be offset lower than 1.
+	This allows us to recover from forms quicker.
+	
+	<attributes offset>|Size:<offset>|Perception:<offset>|etc...
+
+
+
+================================================================================
+== DATA ========================================================================
+
+&d.statfuncs sfs=#89
+&d.stat() sfs=#978
+&d.roller sfs=#18850
+&d.healthfrob sfs=#??? (probably not needed)
+
+
+================================================================================
+== FUNCTIONS ===================================================================
+
+&f.position.attribute sfs=match( get( v( d.statfuncs )/list_attribute ), %0 )
+
+&f.get.offset.attributes sfs=first( get( %0/_form.offsets ), | )
+	...
+
+&f.set.attributes sfs=set( %0, _atmodified:...)
+&f.set.size sfs=set( %0, _sizemod:...)
+&f.set.species_factor sfs=set( %0, _factormod:...)
+&f.set.perception sfs=set( %0, _permod:...)
+&f.set.defense sfs=set( %0, _defensemod:...)
+
+--
+
+&f.sign sfs=localize( [null( regmatch( %0, (\\\\+|\\\\-).*, w w ))]%qw )
+
+--
+
+Some of this is complex because we need to make sure that the 
+offset + the original modified value for the attribute don't bring the attribute 
+below 1.
+
+We do this in two steps:
+	1. Find out what we want to raise/lower the attribute by.
+	   If we want to set it directly, find out what the offset would look like.
+	2. Add step 1 + attribute + modified values. If this is below 1, change our 
+	   offset so that the final total is 1.
+
+This is a lot of work to make sure that the final attribute is never illegal, 
+and there are situations where this doesn't help. For example:
+	Attribute: 2
+	Modified: +3
+	Requested Form offset: -5
+	Actual Form offset: -4
+	Final modified: -1
+	Original modified (+3) is removed.
+	New Modified: -4
+	Attribute + modified: -2
+
+Don't know what to do about this yet. May involve re-writing +sheet a little.
+If we make each attribute: min( 1, Attr + Atmod ), then perhaps that will work.
+Perhaps it won't.
+Nhh.
+
+--
+
+UPDATE: We're dealing with it by not dealing with it. Let the system find the accurate total value. From this, the +sheet and +roll code will need to be educated that an attribute cannot be below 0, and other traits cannot be below 0.
+
+--
+
+0: player dbref
+1: get( <species database>/<species>.<form>.offsets ) -- attribute:[+|-]value
+returns: results for new _form.offsets
+
+o: offsets to apply for replaced _form.offsets
+f: filtered input for attributes
+
+p: list position of current attribute
+s: sign of offset: +/-/0
+a: actual value to offset attribute by
+
+n: name of non-attribute to check
+z: current player value of same
+
+--
+
+&f.build.form.offsets sfs=
+localize( 
+	[setq( o, 0 0 0 0 0 0 0 0 0 )]
+
+@@ determine attribute offsets to apply
+	[iter( setr( f, filter( filter.isattribute?, %1 )), 
+		[setq( p, u( f.position.attribute, first( %i0, : )))]
+
+@@ >> determine new offsets
+		[setq( a, 
+			case( u( f.sign, rest( %i0, : )), 
+
+@@ .. if direct set, actual = offset - attribute
+@@ .. (to set to 2 from attribute of 5, offset is -3)
+				@@( null ), 
+				sub( 
+					rest( %i0, : ), 
+					elements( %qc, %qp ), 
+				), 
+
+@@ .. current calculated offset - previous form offset + requested form offset
+				add( 
+					elements( %qo, %qp ), 
+					rest( %i0, : )
+				)
+			)
+		)]
+
+@@ .. finally, update the current calculated offset
+		[setq( o, replace( %qo, %qp, %qa ))], 
+		, @@ 
+	)]
+
+@@ non-attribute offsets
+	[iter( setdiff( %1, %qf ), 
+		setq( o, 
+			%qo|
+			[case( u( f.sign, rest( %i0, : )), 
+				@@( null ), 
+				[setr( n, first( %i0, : ))]:
+				[setr( z, 
+					if( t( setr( z, u( v( d.stat() )/f.stat, %0, %1 ))), 
+						rest( %qz, : ), 
+						udefault( v( d.roller )/parse.stat.%qn, 0, %0 )
+					)
+				)]
+				[sub( rest( %i0, : ), %qz )], 
+
+				%i0 
+			)] 
+		), 
+		, @@ 
+	)]
+
+@@ Return: Total form offsets
+	%qo 
+)
+
+--
+
+0: player dbref
+1: attribute list to modify (generated from 'f.build.form.offsets')
+
+m: modified attributes for _atmodified
+
+--
+
+&f.build.atmodified sfs=
+localize( 
+	[setq( m, default( %0/_atmodified, 0 0 0 0 0 0 0 0 0 ))]
+	[iter( %qm, 
+		add( %i0, elements( %1, inum( 0 )))
+	)] 
+)
+
+
+--
+
+&filter.isattribute? sfs=t( u( f.position.attribute, first( %0, : )))
+
+
+
+================================================================================
+== SPECIES/FORMS ===============================================================
+
+&<species>.forms: Which forms are valid.
+&<species>.<form>.offsets: Core stat offsets.
+&<species>.<form>.notes: Important notes.
+&<species>.<form>.oshift: Default &oshift.
+
+Offsets follow these rules:
+	+x : Add 'x' to the trait.
+	-x : Remove 'x' from the trait.
+	 x : Set the trait directly to 'x'. 
+
+
+--------------------------------------------------------------------------------
+-- Species: Uratha (Werewolf) --------------------------------------------------
+
+&uratha.forms sfs=Hishu Dalu Gauru Urshal Urhan
+
+&uratha.hishu.offsets sfs=@@( none )
+&uratha.hishu.notes sfs=@@( no notes )
+&uratha.hishu.oshift sfs=returns back to %p human (hishu) form.
+
+---
+
+&uratha.dalu.offsets sfs=strength:+1 stamina:+1 manipulation:-1 size:+1 perception:+2
+
+&uratha.dalu.notes sfs=Lunacy (+4 to resist)
+
+&uratha.dalu.oshift sfs=changes to %p near-man (dalu) form.
+
+--- 
+
+&uratha.gauru.offsets sfs=strength:+3 dexterity:+1 stamina:+2 size:+2 perception:+3
+
+&uratha.gauru.notes sfs=Rage, Lunacy, ignore wound penalties, no rolls for unconsciousness, lethal damage with claws (+1) and bite (+2), +1 for natural armor, fail most mental/social rolls, -2 for Death Rage rolls
+
+&uratha.gauru.oshift sfs=changes to %p gauru war-form. [switch(rand(10), 0, Rar!)]
+
+---
+
+&uratha.urshal.offsets sfs=strength:+2 dexterity:+2 stamina:+2 manipulation:-3 size:+1 species_factor:+3 perception:+3
+
+&uratha.urshal.notes sfs=Lunacy (+2 to resist), lethal damage with bite (+2)
+
+&uratha.urshal.oshift sfs=changes to %p near-wolf (urshal) form.
+
+---
+
+&uratha.urhan.offsets sfs=dexterity:+2 stamina:+1 species_factor:+3 size:-1 perception:+4
+
+&uratha.urhan.notes sfs=Lethal damage with bite (+2)
+
+&uratha.urhan.oshift sfs=changes to %p wolf (urhan) form.
+
+
+
+
+
+
+
+
+
+
+
+
+
+-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-==--=-=-=-=-=-=
+
+Current shift code: 
+
+F.SHIFT: localize( 
+	[if( not( t( ulocal( %0/_BASE ))), set( %0, _BASE:[default( %0/_ATMODIFIED, 0 0 0 0 0 0 0 0 0 )]/[default( %0/_SIZEMOD, 0 )]/[default( %0/_FACTORMOD, 0 )]/[default( %0/_PERMOD, 0 )]/[default( %0/_DEFENSEMOD, 0 )] ))]
+	
+	[if( 
+		t( setr( n, ulocal( %va/f.find.species, %1 ))), 
+		if( 
+			strmatch( ulocal( %0/_FORM ), %1:[last( %2, : )] ), 
+			game( %0, You are already in [first( ulocal( %0/_FORM ), : )] [last( ulocal( %0/_FORM ), : )] form. ), 
+
+			[set( %0, _HEALTHMOD: )]
+
+			[switch( first( %2, : ), 
+@@ >> Human
+				Human, 
+				[ulocal( %va/f.direct.apply, %0, ulocal( %0/_BASE ))]
+				[set( %0, _BASE: )]
+				[set( %0, _FORM:%1:[last( %2, : )] )], 
+
+@@ >> Throwback
+				Throwback, 
+				[ulocal( %va/f.direct.apply, %0, ulocal( %0/_BASE ))]
+				[ulocal( %va/f.build.apply, %0, ulocal( %va/f.build.form, ulocal( %qn/form.throwback.[ulocal( %qn/THROWBACK.SIZE )] )), default( %qn/throwback.animal_defense?, 0 )
+				)], 
+
+@@ >> War
+				War, 
+				[ulocal( %va/f.direct.apply, %0, ulocal( %0/_BASE ))]
+				[ulocal( %va/f.build.apply, %0, ulocal( %va/f.build.form, ulocal( %qn/form.war )), default( %qn/war.animal_defense?, 0 ))], 
+
+@@ >> Dire
+				Dire, 
+				[ulocal( %va/f.direct.apply, %0, ulocal( %0/_BASE ))]
+				[setq( x, ulocal( %va/f.build.merge, ulocal( %va/f.build.form, ulocal( %qn/form.beast )), if( t( stat( %0, Extraordinary Specimen )), ulocal( %va/f.build.merge, ulocal( %va/f.build.form, ulocal( %qn/form.dire )), ulocal( %va/f.build.form, ulocal( %va/special.extraordinary.specimen ))), ulocal( %va/f.build.form, ulocal( %qn/form.dire )))))]
+				[if( strmatch( last( %2, : ), Primal ), [ulocal( %va/f.build.apply, %0, ulocal( %va/f.build.form, ulocal( %qn/form.primal )), default( %qn/war.animal_defense?, 0 ))], [ulocal( %va/f.build.apply, %0, %qx, default( %qn/dire.animal_defense?, 0 ), stat( %0, Extraordinary Specimen ))] )], 
+
+@@ >> Beast
+				Beast, 
+				[ulocal( %va/f.direct.apply, %0, ulocal( %0/_BASE ))]
+				[ulocal( %va/f.build.apply, %0, [if( t( stat( %0, Extraordinary Specimen )), ulocal( %va/f.build.merge, ulocal( %va/f.build.form, ulocal( %qn/form.beast )), ulocal( %va/f.build.form, ulocal( %qn/special.extraordinary.specimen ))), ulocal( %va/f.build.form, ulocal( %qn/form.beast )))], default( %qn/beast.animal_defense?, 0 ), stat( %0, Extraordinary Specimen ))] 
+
+			)] 
+			[set( %0, _FORM:%1:[last( %2, : )] )] 
+
+
+			[pemit( lcon( loc( %0 ), player ), [if( and( t( match( Beast Dire War, last( first( get( %0/_FORM )), : ))), t( setr( k, extract( stat( %0, resilient form ), 2, 1, : )))), set( %0, _HEALTHMOD:[max( 0, sub( min( first( u( #89/score-health, %0 )), add( last( u( #89/score-health, %0 )), %qk )), last( u( #89/score-health, %0 ))))] ))][u( %!/f.form.desc, %0, first( get( %0/_FORM ), : ), last( get( %0/_FORM ), : ))][alertgame( GAME )] [name( %0 )] shifts into [if( or( strmatch( ulocal( %0/_TEMPLATE ), Werewolf ), strmatch( last( ulocal( %0/_FORM ), : ), Human )), , [first( ulocal( %0/_FORM ), : )]%b )][last( ulocal( %0/_FORM ), : )] form. )] ), 
+		err( %0, Species Object not found%, please contact staff. )
+	)] 
+
+)
+
+
+=--=-=-==--=
+
+#4069:F.BUILD.APPLY: 
+	[set( %0, 
+		_ATMODIFIED:
+		[iter( first( %1, / ), 
+			[setq( c,  )]
+			[setq( b,  )]
+			[setq( c, 
+				add( 
+					u( f.get.modifier, 
+						%0, 
+						extract( u( data.attributes ), inum( 0 ), 1 ), 
+						## 
+					), 
+					extract( u( %0/_ATMODIFIED ), inum( 0 ), 1 )
+				)
+			)]
+			[setq( b, extract( u( %0/_ATTRIBUTES ), inum( 0 ), 1 ))]
+			[if( lt( add( %qc, %qb ), 1 ), sub( 1, %qb ), %qc )] 
+		)] 
+	)]
+	
+	[set( %0, _SIZEMOD:[u( f.get.modifier, %0, size, elements( %1, 2, / ))] )]
+	
+	[set( %0, _FACTORMOD:
+		[add( u( f.get.modifier.speed, %0, elements( %1, 3, / )), t( %3 ))] 
+	)]
+	
+	[set( %0, _PERMOD:[add( elements( %1, 4, / ), default( %0/_PERMOD, 0 ))] )]
+	
+	[set( %0, _DEFENSEMOD:[add( if( %2, u( f.get.modifier.animal_defense, %0 ), 0 ), default( %0/_DEFENSEMOD, 0 ))] )]
+
+
+=-=--=-=-=
+
+#4069:F.GET.MODIFIER: 
+	[if( 
+		gt( strlen( edit( %2,  +,  positive,  -,  negative )),  5 ),  
+		%2,  
+		sub( %2,  last( stat( %0,  %1 ),  : ))
+	)]
+
+
+
+
+================================================================================
+== DATA ========================================================================
+
+&d.statfuncs sfs=#204
+&d.healthfrob sfs=#205
+
+&d.forms.werewolf sfs=Hishu.Dalu.Gauru.Urshal.Urhan
+&d.forms.skinthief sfs=Human.*
+&d.forms.changeling sfs=Human.*
+
+
+================================================================================
+== FORMS PACKETS ===============================================================
+
+Format: &d.form.<form name>.<directive>: We won't be using this as an index, so we can easily use it as a more legible pseudo-<statpath>+<info>.
+
+Per-player "packets" may also need to be built, or some way to validate that a player can turn into form "xxx".  &_form.current records current form only.
+
+Offsets - <statpath>:+/-<value>
+	What to increase/decrease. +/-: change by, value: change to.
+
+Notes - Things you might want to know
+
+--
+
+&form.human.offsets sfs=@@('human' === 'default' === 'null')
+&form.human.oshift sfs=returns back to %p normal form.
+
+--
+
+&form.Hishu.offsets sfs=@@(nothing special)
+&form.Hishu.oshift sfs=returns back to %p human (Hishu) form.
+
+-
+
+&form.dalu.offsets sfs=attribute.strength:+1 attribute.stamina:+1 attribute.manipulation:-1 advantage.size:+1
+
+&form.dalu.notes sfs=Lunacy (+4 to resist), +2 perception
+
+&form.dalu.oshift sfs=changes to %p near-man (dalu) form.
+
+
+-
+
+&form.gauru.offsets sfs=attribute.strength:+3 attribute.dexterity:+1 attribute.stamina:+2 advantage.size:+2
+
+&form.gauru.notes sfs=Rage, Lunacy, ignore wound penalties, no rolls for unconsciousness, lethal damage with claws (+1) and bite (+2), +1 for natural armor, fail most mental/social rolls, -2 for Death Rage rolls, +3 perception
+
+&form.gauru.oshift sfs=changes to %p gauru war-form. [switch(rand(10), 0, Rar!)]
+
+-
+
+&form.urshal.offsets sfs=attribute.strength:+2 attribute.dexterity:+2 attribute.stamina:+2 attribute.manipulation:-3 advantage.size:+1 special.species_factor:+3
+
+&form.urshal.notes sfs=Lunacy (+2 to resist), lethal damage with bite (+2), +3 perception
+
+&form.urshal.oshift sfs=changes to %p near-wolf (urshal) form.
+
+-
+
+&form.urhan.offsets sfs=attribute.dexterity:+2 attribute.stamina:+1 special.species_factor:+3 advantage.size:-1
+
+&form.urhan.notes sfs=Lethal damage with bite (+2), +4 perception
+
+&form.urhan.oshift sfs=changes to %p wolf (urhan) form.
+
+================================================================================
+== FUNCTIONS ===================================================================
+
+&f.default-form sfs=switch(%0, *Werewolf*, Hishu, Human)
+
+
+--------------------------------------------------------------------------------
+-- Calculate Offsets -----------------------------------------------------------
+
+Calculate the proper offset: Attributes no lower than 1, others no lower than 0
+
+If Increases:
+	You can always increase.
+
+If Decreases:
+	Cannot go below 1.  So offset by: 
+		-[min( |<amount to reduce>|, <stat> - <lowest possible value of stat> )]
+	which for attributes is...
+		-[min(abs(<reduction>), sub(<stat>, 1))]
+
+0: sheet dbref
+1: sheet statpath:value to increase/decrease
+
+q1: sheet statpath
+q2: value to increase/decrease
+
+qm: minumum that stat can be (attr: 1, others: 0)
+qs: stat.from.sheet
+qc: stat's current total value (perm + offset)
+qo: calculated offset
+qt: total new offset
+
+(I know I don't need case() here, but I suspect I'll need to add to this)
+
+
+&f.offset.calculate sfs=
+localize(
+
+	[setq(1, first(%1, :))][setq(2, rest(%1, :))]
+@@ qs: stat from sheet - qc: current total stat
+	[setq(s, u(%0/_%q1))][setq(c, ladd(%qs, .))]
+
+@@ qm: minimum stat can be - pretty straightforward, room here to expand
+	[setq(m, 
+		switch(%1,
+			attribute.*, 1, 
+			0
+		)
+	)]
+
+@@ qo: calculate actual offset from requested offset
+@@ (I don't need case() here, but I suspect I'll need to add to this)
+	[setq(o, 
+		case(1, 
+@@ adding offset - no problem
+			gte(%q2, 0), %q2,
+@@ subtracting offset - cannot be lower than Min For Stat (%qm)
+			lt(%q2, 0), 
+			-[min(abs(%q2), sub(%qc, %qm))]
+		)
+	)]
+
+@@ qt: total (new) offset
+	[setq(t, add(rest(%qs, .), %qo))]
+
+@@ return <statpath>:<offset> - if total offset = 0, return offset of 'null'
+	%q1:[if(neq(%qt, 0), %qt)]
+
+)
+
+--
+
+&f.offset.calculate sfs=localize([setq(1, first(%1, :))][setq(2, rest(%1, :))][setq(s, u(%0/_%q1))][setq(c, ladd(%qs, .))][setq(m, switch(%1,attribute.*, 1, 0))][setq(o, case(1, gte(%q2, 0), %q2,lt(%q2, 0), -[min(abs(%q2), sub(%qc, %qm))]))][setq(t, add(rest(%qs, .), %qo))]%q1:[if(neq(%qt, 0), %qt)])
+
+
+
+================================================================================
+== +SHIFT ======================================================================
+
+Thenomain : @@ check for approval stamp
+Thenomain : @@ check for &d.forms.<template>
+Thenomain : @@ check for & name-complete on u(d.forms.<template>)
+Thenomain : @@ check current form different than requested
+Thenomain : @@ announce shift
+Thenomain : @@ delete old-form offsets
+Thenomain : @@ add new-form offsets
+Thenomain : @@ check for overspill in health
+Thenomain : @@ .. if overspill, trigger notice
+
+We are doing all this by hand and not via getstat()/setstat() because we need to grab a lot of stuff directly from _special.* and we might as well bypass the system.
+
+
+q0: trimmed whatever
+qs: sheet loc
+qc: current form or default for template if unset
+qt: valid forms for sheet's template <- expand to user-defined later
+qf: full name of matched form
+
+&c.shift sfs=$+shift*: @pemit %#=
+	[setq(0, trim(%0))]
+	[setq(s, u([v(d.statfuncs)]/f.find-sheet, %#))]
+	[setq(c, udefault(%qs/_form.current, u(f.default-form, u(%qs/_bio.template))))]
+	[setq(t, setunion(iter(u(%qs/_bio.template), u(d.forms.%i0), ., .), , .))]
+	[setq(f, grab(.%qt, %q0*, .))]
+
+	[case(0, 
+
+@@ error check: approval stamp exist
+		isapproved(%#, approved), 
+		[alert(shift)] You may not use this command until approved., 
+
+@@ error check: &d.forms.<template> exists
+		strlen(%qt), 
+		[alert(shift)] Your template cannot +shift., 
+
+@@ if just +shift, return valid + form
+		strlen(%q0), 
+		[alert(shift)] Valid Forms: [itemize(%qt, .)]%r
+		[space(7)] You are in form: %qc
+		[if(hasattr(%!, form.%qc.notes), %r[wrap(Notes: [u(form.%qc.notes)], 78, left, space(8))])], 
+
+@@ error check: %qf (matched form) returned valid
+		t(%qf), 
+		[alert(shift)] I don't have a record of that form., 
+
+@@ error check: current form different than requested
+		comp(%qc, %qf), 
+		[alert(shift)] You are already in %qc., 
+
+@@ GOOD! Push data to "workhorse"
+		u(f.shift-workhorse, %qs, %qc, %qf)
+	)]
+
+--
+
+&c.shift sfs=$+shift*: @pemit %#=[setq(0, trim(%0))][setq(s, u([v(d.statfuncs)]/f.find-sheet, %#))][setq(c, udefault(%qs/_form.current, u(f.default-form, u(%qs/_bio.template))))][setq(t, setunion(iter(u(%qs/_bio.template), u(d.forms.%i0), ., .), , .))][setq(f, grab(.%qt, %q0*, .))][case(0, isapproved(%#, approved), [alert(shift)] You may not use this command until approved., strlen(%qt), [alert(shift)] Your template cannot +shift., strlen(%q0), [alert(shift)] Valid Forms: [itemize(%qt, .)]%r[space(strlen(alert(shift)))] You are in form: %qc[if(hasattr(%!, form.%qc.notes), %r[wrap(Notes: [u(form.%qc.notes)], 78, left, space(8))])], t(%qf), [alert(shift)] I don't have a record of that form., comp(%qc, %qf), [alert(shift)] You are already in %qc., u(f.shift-workhorse, %qs, %qc, %qf))]
+
+--------------------------------------------------------------------------------
+-- +SHIFT WORKHORSE ------------------------------------------------------------
+
+Notable line ("offset" from shiftstat)
+		of*, 
+		ulocal(f.setstat.workhorse, 
+			<sheet dbref>, <statpath>, <new offset>, offset
+		), 
+
+
+0: sheet dbref
+1: form from
+2: form to
+
+qo: offsets to set on &_form.offsets
+qc: current sheet stat
+qe: errors to display
+
+qh: pre-shift health (bashing lethal agg)
+qn: post-shift health (bashing lethal agg)
+
+--
+
+&f.shift-workhorse sfs=
+@@ -- FROM: 
+	[iter(
+		u(%0/_form.offsets), 
+		[setq(e, 
+			ulocal(
+				[u(d.statfuncs)]/f.setstat.workhorse, 
+				%0, 
+				first(%i0, :), 
+				add(rest(u(%0/_[first(%i0, :)]), .), mul(rest(%i0, :), -1)), 
+				offset
+			)
+		)]
+@@ .. errors?
+		[if(t(%qe), @@(OK!), [alert(shift)] Error: %qe %r)]
+		, , @@
+	)]
+
+
+@@ -- TO: 
+	[setq(o, iter(u(form.%2.offsets), u(f.offset.calculate, %0, %i0)))]
+
+	[iter(
+		%qo, 
+		[setq(e, 
+			ulocal(
+				[u(d.statfuncs)]/f.setstat.workhorse, 
+				%0, 
+				first(%i0, :), 
+				add(rest(u(%0/_[first(%i0, :)]), .), rest(%i0, :)), 
+				offset
+			)
+		)]
+@@ .. errors?
+		[if(t(%qe), @@(OK!), [alert(shift)] Error: %qe %r)]
+		, , @@
+	)]
+
+@@ -- SET FORM
+	[set(%0, _form.current:%2)]
+	[case(u(%0/_form.current), %qf, @@(OK), [alert(shift)] Error: Current form not set. %r)]
+
+@@ -- REMEMBER OFFSETS
+	[set(%0, _form.offsets:%qo)]
+	[case(u(%0/_form.offsets), %qo, @@(OK!), [alert(shift)] Error: Actual offsets not remembered.)]
+
+@@ -- ANNOUNCE OSHIFT: if on them, use that, else use default
+	[pemit(lcon(loc(%#), connect), 
+		[alert(shift)] %N 
+		[if(
+			hasattr(%#, oshift.%2), 
+			objeval(%#, u(oshift.%2)), 
+			u(form.%2.oshift)
+		)]
+	)]
+
+@@ -- SET HEALTH
+	[setq(h, iter(bashing lethal aggravated, u(%0/_health.%i0)))]
+	[setq(n, 
+		u(
+			[v(d.healthfrob)]/f.reverse-max-health, 				u(%0/_health.maximum), %qh
+		)
+	)]
+
+@@ .. if there's a change in health, set it, else ignore it
+	[if(neq(comp(%qh, %qn), 0), 
+			[iter(
+				bashing lethal aggravated, 
+				set(%0, _health.%i0:[extract(%qn, inum(), 1)])
+			)]
+
+@@ -- ANNOUNCE HEALTH: if changed
+		[pemit(lcon(loc(%#), connect), 
+			[alert(shift)] 
+			[u(
+				[v(d.healthfrob)]/f.display-current-health-descr, 
+				%#, %qn, [u(%0/_health.maximum)]
+			)]
+		)]
+	)]
+
+@@ -- TRIGGER ASHIFT.<form>: if applicable
+		[if(hasattr(%#, ashift.%2), trigger(%#/ashift.%2, %1))]
+
+
+--
+
+&f.shift-workhorse #3029=[iter(u(%0/_form.offsets), [setq(e, ulocal([u(d.statfuncs)]/f.setstat.workhorse, %0, first(%i0, :), add(rest(u(%0/_[first(%i0, :)]), .), mul(rest(%i0, :), -1)), offset))][if(t(%qe), @@(OK!), [alert(shift)] Error: %qe %r)], , @@)][setq(o, iter(u(form.%2.offsets), u(f.offset.calculate, %0, %i0)))][iter(%qo, [setq(e, ulocal([u(d.statfuncs)]/f.setstat.workhorse, %0, first(%i0, :), add(rest(u(%0/_[first(%i0, :)]), .), rest(%i0, :)), offset))][if(t(%qe), @@(OK!), [alert(shift)] Error: %qe %r)], , @@)][set(%0, _form.current:%2)][case(u(%0/_form.current), %qf, @@(OK), [alert(shift)] Error: Current form not set. %r)][set(%0, _form.offsets:%qo)][case(u(%0/_form.offsets), %qo, @@(OK!), [alert(shift)] Error: Actual offsets not remembered.)][pemit(lcon(loc(%#), connect), [alert(shift)] %N [if(hasattr(%#, oshift.%2), objeval(%#, u(oshift.%2)), u(form.%2.oshift))])][setq(h, iter(bashing lethal aggravated, u(%0/_health.%i0)))][setq(n, u([v(d.healthfrob)]/f.reverse-max-health, u(%0/_health.maximum), %qh))][if(neq(comp(%qh, %qn), 0), [iter(bashing lethal aggravated, set(%0, _health.%i0:[extract(%qn, inum(), 1)]))][pemit(lcon(loc(%#), connect), [alert(shift)] [u([v(d.healthfrob)]/f.display-current-health-descr, %#, %qn, [u(%0/_health.maximum)])])])][if(hasattr(%#, ashift.%2), trigger(%#/ashift.%2, %1))]
+
+
+================================================================================
+== +SHIFT/ABOUT ================================================================
+
++shift/about: 
++shift/about <form>: Notes about that form
+
+
+================================================================================
+== HELP: Temporary =============================================================
+
+&help~IC_Commands~+shift #96=Shifting Forms~
+
+*** +shift is still in development ***%r %r
+
+[ansi(h, +shift)]: Return what forms you can shift into, your current form, and any notes concerning it.%r%r
+
+[ansi(h, +shift <form>)]: Shift into that form.  Most stat changes will be noted as offsets (with original stats in parenthesis on your +sheet).  This will also report to the room the shift and any damage rollover that might happen because of it.%r%r
+
+You may set your own shift messages using [ansi(h, &oshift.<form>)], and add code to your shifts by using [ansi(h, &ashift.<form>)].  Note that the former works like any @o* attribute (odrop, osucc, etc.) in that your name will be automatically prepended.%r%r
+
+e.g. %r
+%b %b &oshift.dalu me=twists into a hideous 7' tall man.
+%b %b &ashift.dalu me=@set/quiet me=desc:It's hideous!
+
+--
+
+&help~IC_Commands~+shift #96=Shifting Forms~*** +shift is still in development ***%r %r[ansi(h, +shift)]: Return what forms you can shift into, your current form, and any notes concerning it.%r%r[ansi(h, +shift <form>)]: Shift into that form.  Most stat changes will be noted as offsets (with original stats in parenthesis on your +sheet).  This will also report to the room the shift and any damage rollover that might happen because of it.%r%rYou may set your own shift messages using [ansi(h, &oshift.<form>)], and add code to your shifts by using [ansi(h, &ashift.<form>)].  Note that the former works like any @o* attribute (odrop, osucc, etc.) in that your name will be automatically prepended.%r%re.g. %r%b %b &oshift.dalu me=twists into a hideous 7' tall man.%r%b %b &ashift.dalu me=@set/quiet me=desc:It's hideous!

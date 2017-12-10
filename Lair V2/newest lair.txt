@@ -1,0 +1,1683 @@
+@@  Reach Mux
+@@  +Lair System
+@@  Coded by: Gizmo AKA Ourea, Alzie
+@@            Thenomain AKA Thenomain
+@@
+@@  Coded for: The Reach Mux
+@@  Date Last Touched: 8/08/2014
+@@----------------------------------------------------------------------------
+@@  Purpose: Remake +lair. #14800
+@@----------------------------------------------------------------------------
+@@
+@@  Basic Layout:
+@@      LAIR_TYPES - List of Lair Types
+@@      LAIR_TRAITS - List of Lair Traits
+@@      LAIRS_[ID] - Dbref of Lair Object
+@@		
+@@  Lair Objects:
+@@      TYPE - Type of Lair
+@@      LOCATION - Grid Location
+@@      Access:
+@@          PLAYER - | separated list of players with access
+@@          FACTION - | separated list of factions with access
+@@          CONTRIB.[DBREF] - | separated list of contributions
+@@              <trait>[.<subtrait>]:<value>[/<notes>]
+@@
+@@--
+@@  Commands
+@@--
+@@  +lair
+@@  +lair ID
+@@  +lair/type[s]
+@@  +lair/type [!]TYPE
+@@  +lair/trait[s]
+@@  +lair/trait [!]TRAIT
+@@ 
+@@  +lair/create NAME=TYPE/LOCATION
+@@ 
+@@  +lair/con ID/WHO=[!]TRAIT.SUBTRAIT:LEVEL/NOTES
+@@ 
+@@  +lair/list ID
+@@  +lair/list ID/WHO
+@@  +lair/list ID=TRAIT.SUBTRAIT
+@@  +lair/list ID/WHO=TRAIT.SUBTRAIT
+@@
+@@  +lair/note[s] ID=[+]NOTES
+@@  +lair/loc ID=LOCATION
+@@  +lair/newtype ID=TYPE
+@@ 
+@@  +lair/player ID=[!]WHO
+@@  +lair/faction ID=[!]FACTION
+@@  +lair/rename ID=NEW NAME
+@@  
+@@  +lair/note ID/NOTE NAME
+@@  +lair/note ID/NOTE NAME=NEW NOTE
+@@  +lair/note ID/NOTE NAME=+APPENDED NOTE
+@@  
+@@  +lair/delete ID
+@@  +lair/restore ID
+@@  +lair/destroy ID
+@@  +lair/archive
+@@  +lair/archive ID
+
+
+WISH LIST:
+
+	+lair/show ID/NOTE NAME[=TARGET LIST]
+	+lair/search [TYPE=]KEYWORD(S)
+
+
+
+================================================================================
+== NOTES =======================================================================
+
+Each lair is kept on a separate object held by the object that runs this code.
+The lair object is formated thus:
+
+	@name
+		Name of the lair.
+	&type
+		Type of lair.
+	&location
+		Dbref location of the lair, or at least the main contact point.
+	&contrib.<dbref>: <trait>:<value>/<notes>
+		A single player's contributions. 
+		<dbref> may be the same as the lair object.
+	&note.<note_name>: <timestamp secs>|<dbref of staffer>|<note>
+		A very simple note system
+	&player: <player dbref> <player dbref> <player dbref>
+		List of players with access
+	&faction: <faction name>|<faction name>|<faction name>
+		List of Factions with access (as per Aether Factions)
+	&number
+		The number for this lair; secondary & not to be relied upon.
+
+
+================================================================================
+== TOP-LEVEL COMMANDS ==========================================================
+
+All commands may be entered as '+lair' or '+lairs'.
+(Note, this may not yet be true, but should be.)
+
+	+lair[s]
+	+lair type[s]
+	+lair type [!]<type>
+	+lair trait[s]
+	+lair trait [!]<trait>
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Types ---------------------------------------------------------
+
+List existing lair types.
+
+--
+
+&CMD.TYPES #14800=$^\+lairs?/types?$:
+	@pemit %#=[ansi( h, LAIR: )] 
+		The following lair types are available: 
+		[edit( itemize( v( LAIR_TYPES ), | ), _, %b )]
+
+--
+
+@set #14800/CMD.TYPES=regexp
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Type ----------------------------------------------------------
+
+Add and remove type of lairs.
+Intended to replace lair/addtype
+
+--
+
+&CMD.TYPE #14800=$^\+lairs?/types? (!?)(.+)$:
+	@assert isstaff( %# )={ 
+		@pemit %#=[ansi( hr, LAIR: )] Staff Only. 
+	}; 
+	@eval 
+		[setq( 2, edit( %2, %b, _ ))]
+		[setq( 3, edit( titlestr( %2 ), %b, _ ))]; 
+	@assert 
+		cor( 
+			cand( 
+				t( %1 ), 
+				member( v( LAIR_TYPES ), %q2, | )
+			), 
+			not( t( %1 ))
+		)={ 
+			@pemit %#=[ansi( hr, LAIR: )] 
+			I cannot find that type to remove. Match must be exact. 
+		}; 
+	@eval 
+		set( me, 
+			LAIR_TYPES:
+			[switch( %1, 
+				!, 
+				setdiff( v( LAIR_TYPES ), %q2, |, | ), 
+				setunion( v( LAIR_TYPES ), %q3, |, | )
+			)] 
+		); 
+	@pemit %#=
+		[ansi( h, LAIR: )] 
+		[switch( %1, !, Removed '%2' from, Added '[titlestr( %2 )]' to )] 
+		Lair Types.
+
+--
+
+@set #14800/CMD.TYPE=regexp
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Traits --------------------------------------------------------
+
+Existing lair traits.
+
+--
+
+&CMD.TRAITS #14800=$^\+lairs?/traits?$:
+	@pemit %#=
+	strcat( 
+		wheader( Lair Traits ), %r, 
+		vtable( edit( v( LAIR_TRAITS ), _, %b ), , | ), 
+		wfooter( )
+	)
+
+--
+
+@set #14800/CMD.TRAITS=regexp
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Trait [!]<trait> ----------------------------------------------
+
+&CMD.TRAIT #14800=$^\+lairs?/traits? (!?)(.+)$:
+	@assert isstaff( %# )={ 
+		@pemit %#=[ansi( hr, ERROR: )] Staff Only. 
+	}; 
+	@eval 
+		[setq( 2, edit( %2, %b, _ ))]
+		[setq( 3, edit( titlestr( %2 ), %b, _ ))]; 
+	@assert 
+		cor( 
+			cand( 
+				t( %1 ), 
+				member( v( LAIR_TRAITS ), %q2, | )
+			), 
+			not( t( %1 ))
+		)={ 
+			@pemit %#=[ansi( hr, ERROR: )] 
+			I cannot find that trait to remove. Name must be exact. 
+		}; 
+	@eval 
+		set( me, 
+			LAIR_TRAITS:
+			[switch( %1, 
+				!, 
+				setdiff( v( LAIR_TRAITS ), %q2, |, | ), 
+				setunion( v( LAIR_TRAITS ), %q3, |, | )
+			)] 
+		); 
+	@pemit %#=
+		[ansi( h, LAIR: )] 
+		[switch( %1, 
+			!, Removed '[titlestr( %2 )]' from, 
+			Added '[titlestr( %2 )]' to 
+		)] 
+		Lair Traits.
+
+--
+
+@set #14800/CMD.TRAIT=regexp
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair ---------------------------------------------------------------
+
+&CMD.LAIR #14800=$^\+lairs?$:
+	@assert gte( attrcnt( me/LAIRS_* ), 0 )={ 
+		@pemit %#=
+			[header( +Lair System )]%r%r
+			[center( No Lairs, 78 )]%r%r
+			[footer( )] 
+	}; 
+
+	@pemit %#=
+		[header( +Lair System )]%r
+		[u( DISP.LAIRS-LIST, %#, LAIRS )]%r
+		[footer( )]; 
+
+--
+
+@set #14800/CMD.LAIR=regexp
+
+
+--------------------------------------------------------------------------------
+-- DISPLAY: Lairs List ---------------------------------------------------------
+
+Also displays Archive list.
+
+0: Name of 'attribute for: &<attribute>_<number>
+
+--
+
+&DISP.LAIRS-LIST #14800=
+	strcat( 
+		setq( f, 
+			filter( fil.see-lairs, 
+				edit( lattr( me/%1_* ), [ucstr( %1 )]_, ), 
+				, , %0 
+			)
+		), 
+		setq( l, sort( %qf, n )), 
+		setq( m, strlen( lmax( %ql ))), 
+		iter( %ql, 
+			strcat( 
+				rjust( ansi( h, %i0 ), %qm ), .%b, 
+				ljust( name( v( [ucstr( %1 )]_%i0 )), 40 ), %b, 
+				ansi( xh, ([xget( v( %1_%i0 ), type )]) )
+			), 
+			, %r 
+		)
+	)
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: Authed ------------------------------------------------------------
+
+Authorized for this Lair 
+
+0: lair object dbref
+1: target dbref 
+
+--
+
+&F.AUTHED #14800=
+	cor( 
+		isstaff( %1 ), 
+		u( f.facauth, %0, %1 ), 
+		match( xget( %0, PLAYER ), %1 )
+	)
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: FacAuthed ---------------------------------------------------------
+
+In a faction authorized for this Lair
+
+0: lair object dbref
+1: target dbref 
+
+--
+
+&F.FACAUTH #14800=
+	lor( 
+		iter( 
+			xget( %0, FACTION ), 
+			isfaction?( %1, %i0 ), 
+			| 
+		)
+	)
+
+
+--------------------------------------------------------------------------------
+-- FILTER: See Lairs -----------------------------------------------------------
+0: list of numbers to check
+
+&FIL.SEE-LAIRS #14800=u( f.authed, v( LAIRS_%0 ), %1 )
+
+
+
+================================================================================
+== LAIR DETAILS ================================================================
+
+	+lair <num>
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Details -------------------------------------------------------
+
+&CMD.LAIR.DETAILS #14800=$^\+lairs? (.+)$:
+	@assert t( setr( l, v( LAIRS_%1 )))={ 
+		@pemit %#=[ansi( hr, LAIR: )] %1 is not a Lair. 
+	}; 
+
+	@switch 
+		cor( 
+			isstaff( %# ), 
+			u( f.authed, %ql, %# )
+		)=
+	0, { 
+		@pemit %#=[ansi( hr, LAIR: )] You don't have access to that lair. 
+	}, 
+	1, { 
+		@pemit %#=
+			[header( +Lair %1 )]%r
+			[u( DISP.LAIR, %ql )]%r
+			[footer( )] 
+	}
+
+--
+
+@set #14800/cmd.lair.details=regexp
+
+
+--------------------------------------------------------------------------------
+-- DISPLAY: Lair Summary -------------------------------------------------------
+
+&DISP.LAIR #14800=
+	[ansi( h, NAME )]: [name( %0 )] (%0)%r
+	[ansi( h, TYPE )]: [titlestr( xget( %0, TYPE ))]%r
+	[ansi( h, LOCATION: )] 
+		[case( 
+			setr( l, ucstr( xget( %0, LOCATION ))), 
+			OFF, OFF, 
+			[name( %ql )] (%ql) : 
+			[ucstr( default( %ql/COORD, << coords unset >> ))]
+		)]%r
+
+	[setq( d, u( disp.lair.notes, %0 ))]
+	[if( t( %qd ), 
+		[ansi( h, NOTES )]: %r%qd%r 
+	)]
+
+	%r
+	[ansi( h, ACCESS )]:%r
+	[space( 3 )]Players: 
+		[setq( d, iter( xget( %0, PLAYER ), name( %i0 ), , | ))]
+		[if( t( %qd ), edit( %qd, |, %,%b ), ansi( xh, (none) ))]%r
+	[space( 3 )]Factions: 
+		[setq( d, xget( %0, Faction ))]
+		[if( t( %qd ), titlestr( edit( %qd, |, %,%b )), ansi( xh, (none) ))]%r
+	%r
+@@	[ansi( h, CONTRIBUTORS )]:%r
+@@		[setq( m, 
+@@			[if( 
+@@				t( hasattr( %0, contrib.%0 )), 
+@@				[ansi( n, name( %0 ), xh, %b(lair))]| 
+@@			)]
+@@			[iter( 
+@@				edit( 
+@@					setdiff( lattr( %0/contrib.* ), CONTRIB.%0 ), 
+@@					CONTRIB., 
+@@				), 
+@@				name( %i0 ), , | 
+@@			)] 
+@@		)]
+@@		[wrap( edit( %qm, |, %,%b ), 73, left, space( 3 ) )]%r
+@@	%r
+	[ansi( h, TRAITS )]:%r
+	[u( disp.lair.trait.aggregate, %0 )]
+
+
+--------------------------------------------------------------------------------
+-- DISPLAY: A Lair's Notes -----------------------------------------------------
+
+&DISP.LAIR.NOTES #14800=
+	strcat( 
+		setq( o, lattr( %0/NOTE_* )), 
+		iter( %qo, 
+			[ansi( h, [titlestr( edit( rest( %i0, _ ), _, %b ))]: )]%r
+			%b %b
+			[u( f.wordtrunc, rest( rest( xget( %0, %i0 ), | ), | ), 74, ... )], 
+			, @@ 
+		), 
+
+		if( 
+			cand( 
+				isstaff( %# ), 
+				t( setr( n, ulocal( f.list-notes, xget( %0, LOCATION ))))
+			), 
+
+			strcat( 
+				if( strlen( %qo ), %r%r ), 
+				ansi( h, Location +Notes: ), %r, 
+				iter( %qn, %b %b%i0, |, %r )
+			)
+		)
+	)
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: List of Notes -----------------------------------------------------
+
+&F.LIST-NOTES #14800=
+	iter( edit( lattr( %0/_NOTE_* ), _NOTE_, ), 
+		strcat( 
+			titlestr( edit( %i0, _, %b )), 
+			ansi( xh, ([elements( xget( %0, _NOTE_%i0 ), 3, | )]) )
+		), 
+		, | 
+	)
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: WordTrunc ---------------------------------------------------------
+
+Will take a longer string and shortend it with '...' on the end so that it will
+fit in the line length requested.
+
+This will not cut a word short.
+
+0: string
+1: max line length
+2: string to append if 'too long'
+
+--
+
+&F.WORDTRUNC #14800=
+localize( 
+	strcat( 
+@@ .. don't match past the first newline ..
+		null( regmatchi( %0, (.+), 0 0 )), 
+		if( 
+			gt( 
+				strlen( %q0 ), 
+				%1 
+			), 
+			strcat( 
+				setq( n, strtrunc( %q0, sub( %1, strlen( %2 )))), 
+				case( last( %qn ), 
+					elements( %q0, words( %qn )), %qn, 
+					ldelete( %qn, words( %qn ))
+				)
+			), 
+			%q0 
+		), 
+@@ .. add 'continued' if not everything was displayed
+		if( 
+			cor( 
+				lt( strlen( %q0 ), strlen( %0 )), 
+				gt( strlen( %q0 ), %1 )
+			), 
+			%2 
+		)
+	)
+)
+
+
+--------------------------------------------------------------------------------
+-- DISPLAY: Lair Traits, Aggregate ---------------------------------------------
+
+Sum all the lair traits and display the totals in a sensible manner.
+
+--
+
+&DISP.LAIR.TRAIT.AGGREGATE #14800=
+	[setq( t, u( f.lair.traits.all, %0 ))]
+	[setq( p, lattr( %0/contrib.* ))]
+	[setq( a, 
+		iter( %qt,
+@@ .. grab from lair traits ...
+			%i0:
+@@ .. .. gather values
+			[setq( c, 
+				filter( filter.contributing-values, 
+					%qp, @@(idelim), @@(odelim), %0, %i0 
+				)
+			)]
+			[iter( %qc, 
+				before( rest( grab( xget( %0, %i0 ), %i1:*, | ), : ), / )
+			)]:
+@@ .. .. gather notes
+			[setq( n, 
+				filter( filter.contributing-notes, 
+					%qp, @@(idelim), @@(odelim), %0, %i0 
+				)
+			)]
+			[iter( %qn, 
+				iter( 
+					graball( xget( %0, %i0 ), %i1:*, |, | ), 
+					rest( %i0, / ), |, : 
+				), 
+				, : 
+			)], 
+			|, | 
+		)
+	)]
+@@ .. and then display ..
+	[iter( %qa, 
+		[setq( n, edit( elements( %i0, 1, : ), _, %b ))]
+		[space( 3 )]
+		[setq( f, edit( u( f.format.contribution-one, %qn ), _, %b ))]
+		[setq( v, ladd( elements( %i0, 2, : )))]
+		[ljust( %qf, sub( 39, strlen( %qv )), %xh%xx.%xn )] %qv
+		[setq( c, crumple( rest( rest( %i0, : ), : ), : ))]
+		[if( words( %qc, : ), 
+			%r[space( 6 )][edit( %qc, :, %;%b )]
+		)], 
+		|, %r 
+	)]
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: Get all lair traits in alphabetical order -------------------------
+
+&F.LAIR.TRAITS.ALL #14800=
+	setunion( 
+		iter( 
+			lattr( %0/CONTRIB.* ), 
+			iter( get( %0/%i0 ), lcstr( first( %i0, : )), |, | ), , | 
+		), 
+		, |, | 
+	)
+
+
+--------------------------------------------------------------------------------
+-- FILTER: Not entirely sure what these were about, but they're important ------
+
+&FILTER.CONTRIBUTING-VALUES #14800=
+	t( match( xget( %1, %0 ), %2:*, | ))
+
+&FILTER.CONTRIBUTING-NOTES #14800=
+	t( match( xget( %1, %0 ), %2:*/*, | ))
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: Legible Contribution ----------------------------------------------
+
+Because titlestr() doesn't want to cooperate with 'word.word'.
+
+0: item_may.be_(like_this) another_like_this
+
+&f.format.contributions #14800=
+	iter( %0, 
+		u( f.format.contribution-one, %i0 )
+	)
+
+--
+
+&f.format.contribution-one #14800=
+	edit( 
+		iter( %0, 
+			titlestr( edit( %i0, _, %b )), 
+			., . 
+		), 
+		%b, _ 
+	)
+
+
+
+================================================================================
+== CREATE LAIR =================================================================
+
+	+lair/create <name>=<type>/<location>
+	+lair/loc <number>=<location>
+	+lair/newtype <number>=<type>
+	+lair/rename <number>=<new name>
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Create --------------------------------------------------------
+
+&CMD.LAIR.CREATE #14800=$^\+lairs?/create ([^=]+)=(.+)$:
+	@assert isstaff( %# )={ 
+		@pemit %#=[ansi( hr, LAIR: )] Staff Only. 
+	}; 
+
+	@eval 
+		[setq( n, %1 )]
+		[setq( t, edit( trim( before( %2, / )), %b, _ ))]
+		[setq( l, setr( l, ucstr( trim( rest( %2, / )))))]; 
+
+	@assert valid( name, %qn )={ 
+		@pemit %#=[ansi( hr, LAIR: )] '%qn' is not a good name for a Lair. 
+	}; 
+
+	@assert match( v( LAIR_TYPES ), %qt, | )={ 
+		@pemit %#=[ansi( hr, LAIR: )] '[trim( before( %2, / ))]' 
+		is not a valid Lair Type. 
+	}; 
+
+	@assert t( %ql )={ 
+		@pemit %#=[ansi( hr, LAIR: )] Did not provide a location. 
+	}; 
+
+	@assert cor( hastype( %ql, ROOM ), strmatch( %ql, OFF ))={ 
+		@pemit %#=[ansi( hr, LAIR: )] Location is not a room or 'off'. 
+	}; 
+
+	@assert t( strlen( %1 ))={ 
+		@pemit %#=[ansi( hr, LAIR: )] Usage is +lair/create TYPE\=NAME:LOCATION 
+	}; 
+
+	@pemit %#=u( f.create, %qt, %qn, %ql ); 
+
+--
+
+@set #14800/cmd.lair.create=regexp
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: Create a Lair -----------------------------------------------------
+
+Added a not-elegant way to tell the lair object what its number is.
+(For those rare occasions where we have dbref but need number.)
+
+--
+
+&F.CREATE #14800=
+	strcat( 
+		setq( C, u( f.first-unused, LAIRS )), 
+		setq( A, create( %1, 10, t )), 
+		tel( %qA, #14800 ), 
+		set( %qA, LOCATION:%2 ), 
+		set( %qA, TYPE:%0 ), 
+		set( %qA, NUMBER:%qC ), 
+		set( me, LAIRS_%qC:%qA ), 
+		[ansi( h, LAIR: )] Lair %qC (%1) created as a %0 in location %2 
+	)
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: Find First Unused Lair Number -------------------------------------
+
+&F.FIRST-UNUSED #14800=
+	localize( 
+		strcat( 
+			setq( a, 
+				last( 
+					sort( 
+						setr( b, edit( lattr( me/%0_* ), [ucstr( %0 )]_, )), 
+						n 
+					)
+				)
+			), 
+			first( setdiff( lnum( 1, inc( %qa )), sort( %qb, n ), , , n ))
+		)
+	)
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Loc (Change the Location of a lair) ---------------------------
+
+&CMD.LAIR.LOCATION #14800=$^\+lairs?/loc ([^=]+)=(.+)$:
+	@assert isstaff( %# )={ 
+		@pemit %#=[ansi( hr, LAIR: )] Staff Only. 
+	}; 
+
+	@assert t( setr( l, v( LAIRS_%1 )))={ 
+		@pemit %#=[ansi( hr, LAIR: )] Lair not found. 
+	}; 
+
+	@assert cor( hastype( %2, ROOM ), strmatch( %2, OFF ))={ 
+		@pemit %#=[ansi( hr, LAIR: )] Location is not a room or 'off'. 
+	}; 
+
+	@set %ql=LOCATION:%2; 
+	@pemit %#=[ansi( h, LAIR: )] Location set.
+
+--
+
+@set #14800/cmd.lair.location=regexp
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/NewType (Change the Type of a lair) ---------------------------
+
+&CMD.LAIR.NEWTYPE #14800=$^\+lair/newtype ([^=]+)=(.+)$:
+	@assert isstaff( %# )={ 
+		@pemit %#=[ansi( hr, LAIR: )] Staff Only. 
+	}; 
+
+	@assert t( setr( l, v( LAIRS_%1 )))={ 
+		@pemit %#=[ansi( hr, LAIR: )] Lair not found. 
+	}; 
+
+	@assert match( v( LAIR_TYPES ), %2, | )={ 
+		@pemit %#=[ansi( hr, LAIR: )] '%2' is not a valid Lair Type. 
+	}; 
+
+	@set %ql=TYPE:%2; 
+	@pemit %#=[ansi( h, LAIR: )] Type set.
+
+--
+
+@set #14800/cmd.lair.newtype=regexp
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Rename --------------------------------------------------------
+
+&CMD.LAIR.RENAME #14800=$^\+lair/rename ([^=]+)=(.+)$:
+	@assert isstaff( %# )={ 
+		@pemit  %#=[ansi( hr, LAIR: )] Staff Only. 
+	}; 
+
+	@assert hasattr( me, LAIRS_%1 )={ 
+		@pemit %#=[ansi( hr, LAIR: )] %1 is not a Lair. 
+	}; 
+
+	@assert valid( name, %2 )={ 
+		@pemit %#=[ansi( hr, LAIR: )] '%2' is not a good name for a Lair. 
+	}; 
+
+	think lair name: [setr( n, name( v( LAIRS_%1 )))]; 
+
+	@name v( LAIRS_%1 )=%2; 
+	@pemit %#=[ansi( h, LAIR: )] Renamed %1 from '%qn' to '%2'.
+
+--
+
+@set #14800/cmd.lair.rename=regexp
+
+
+
+================================================================================
+== LAIR CONTRIBUTIONS ==========================================================
+
+	+lair/con <number>/<contributor>=<trait>:<value>[/<short notes>]
+	+lair/con <number>/<contributor>=!<trait>
+	+lair/list <number>
+	+lair/list <number>/<contributor>
+	+lair/list <number>=<trait>
+
+'contributor' may be a player name or the lair itself, for NPC-related 
+contributions. May need to use lair's dbref if collides with a name.
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Con (contribute something to a lair) --------------------------
+
+&CMD.LAIR.CONTRIBUTION #14800=$^\+lairs?/con (.+?)/(.+?)=(.+)$:
+	@assert isstaff( %# )={ 
+		@pemit  %#=[ansi( hr, LAIR: )] Staff Only. 
+	}; 
+
+	@assert cor( 
+		strmatch( %3, !* ), 
+		gt( words( %3, : ), 1 )
+	)={ 
+		@pemit %#=[ansi( hr, LAIR: )] Didn't provide a trait or level. 
+	}; 
+
+	@assert t( setr( l, v( LAIRS_%1 )))={ 
+		@pemit %#=[ansi( hr, LAIR: )] %1 is not a valid Lair ID. 
+	}; 
+
+	@assert 
+		cor( 
+			strmatch( %3, !* ), 
+			match( 
+				v( LAIR_TRAITS ), 
+				edit( before( before( %3, : ), . ), %b, _, !, space( 0 )), 
+				| 
+			)
+		)=
+	{ 
+		@pemit %#=[ansi( hr, LAIR: )] You didn't put in a valid trait.
+	}; 
+
+	@assert 
+		cor( 
+			t( setr( p, pmatch( %2 ))), 
+			strmatch( name( %ql ), %2* ), 
+			strmatch( %ql, %2 )
+		)=
+	{ 
+		@pemit %#=[ansi( hr, LAIR: )] %2 didn't match a valid contributor. 
+	}; 
+
+	think dbref: [if( not( %qp ), setq( p, %ql ), %qp ))]; 
+
+	@switch strmatch( before( before( %3, : ), . ), !* )=
+		1, 
+		{ 
+			@pemit %#=
+				u( F.LAIR.CON.REMOVE, v( LAIRS_%1 ), %qp, rest( %3, ! )) 
+		}, { 
+			@pemit %#=
+				u( F.LAIR.CON.ADD, v( LAIRS_%1 ), %qp, %3 ) 
+		}
+
+--
+
+@set #14800/cmd.lair.contribution=regexp
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: New 'Add Contribution' --------------------------------------------
+
+&F.LAIR.CON.ADD #14800=
+	[setq( 0, xget( %0, CONTRIB.%1 ))]
+	[setq( 1, edit( lcstr( first( %2, : )), %b, _ ))]
+	[setq( 2, %q1:[rest( %2, : )])]
+
+	[setq( 3, matchall( %q0, %q1:*, | ))]
+
+	
+	[switch( 0, 
+		not( t( %q3 )), 
+		[name( %1 )] has already contributed a '[first( %2, : )]' 
+		to [name( %0 )]. 
+		You will need to remove their contribution and add again., 
+		
+		[set( %0, 
+			CONTRIB.%1:
+				[setunion( 
+					[xget( %0, CONTRIB.%1 )], 
+					%q2, 
+					|, | 
+				)]
+		)]
+		[ansi( h, LAIR: )] 
+		Added [name( %1 )]'s contribution of '%2' to [name( %0 )]
+	)]
+
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: New 'Remove Contribution' -----------------------------------------
+
+Because we're aggregating Lair with Contributions, the trait name format must be the same.
+
+--
+
+&F.LAIR.CON.REMOVE #14800=
+	[setq( 0, xget( %0, CONTRIB.%1 ))]
+	[setq( 1, edit( lcstr( first( %2, : )), %b, _ ))]
+	[setq( 2, %q1:[rest( %2, : )])]
+
+	[setq( 3, matchall( %q0, %q1:*, | ))]
+	[setq( 4, elements( %q0, %q3, |, | ))]
+
+	[case( 0, 
+		hasattr( %0, CONTRIB.%1 ), 
+		[ansi( hr, LAIR: )] 
+		[name( %1 )] hasn't contributed to [name( %0 )], 
+		
+		%q3, 
+		[ansi( hr, LAIR: )] 
+		[name( %1 )] hasn't contributed '[first( %2, : )]' to [name( %0 )], 
+
+		eq( words( %q3 ), 1 ), 
+		[ansi( hr, LAIR: )] 
+		[name( %1 )] has contributed multiple items called '[first( %2, : )]' 
+		to [name( %0 )] - don't know what I'm going to do about this yet, 
+
+		[null( set( %0, CONTRIB.%1:[ldelete( %q0, %q3, |, | )] ))]
+		[hasattr( %0, CONTRIB.%1 )], 
+		[ansi( h, LAIR: )] 
+		Removed [name( %1 )] from contributions list for [name( %0 )], 
+
+		[ansi( h, LAIR: )] 
+		Removed '[titlestr( edit( first( %q4, : ), _, %b ))]:[rest( %q4, : )]' 
+		from [name( %1 )]'s contributions 
+		to [name( %0 )] 
+	)]
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: List Contributions -------------------------------------------------
+
+	+lair/list ID
+	+lair/list ID/WHO
+	+lair/list ID=TRAIT[.SUBTRAIT]
+	+lair/list ID/WHO=TRAIT[.SUBTRAIT]
+
+--
+
+&CMD.LAIR.CONTRIBUTORS #14800=$^\+lairs?/list (.+)$:
+think 
+		cat( , 
+			Lair dbref:, setr( d, v( LAIRS_[before( before( %1, = ), / )] )), 
+			%r, 
+			Target player:, setr( w, pmatch( before( rest( %1, / ), = ))), 
+			%r, 
+			Trait filter:, 
+				setr( f, edit( lcstr( setr( f, rest( %1, = ))), %b, _ )), 
+			%r, 
+			Trait filter deluxe:, 
+				setr( t, 
+					strcat( 
+						grab( |[v( lair_traits )], [first( %qf, . )]*, | ), 
+						if( 
+							t( strlen( rest( %qf, . ))), 
+							.[rest( %qf, . )]
+						)
+					)
+				)
+		); 
+
+	@assert t( %qd )={ 
+		@pemit %#=[ansi( hr, LAIR: )] [before( %1, / )] is not a valid lair ID. 
+	}; 
+
+	@assert cor( isstaff( %# ), ulocal( f.authed, %qd, %# ))={ 
+		@pemit  %#=[ansi( hr, LAIR: )] Staff or Lair Access Only. 
+	}; 
+
+	@assert cor( 
+		not( %qf ), 
+		t( first( %qt, . ))
+	)={ 
+		@pemit  %#=[ansi( hr, LAIR: )] Lair trait not found. 
+	}; 
+
+	@pemit %#=case( 1, 
+		t( %qw ), 
+		u( disp.lair.contributors.who, %qd, %qw, if( t( %qf ), %qt, )), 
+		
+		u( disp.lair.contributors.where, %qd, if( t( %qf ), %qt, ))
+	); 
+
+--
+
+@set #14800/CMD.LAIR.CONTRIBUTORS=regexp
+
+
+--------------------------------------------------------------------------------
+-- DISPLAY: Lair Contributions (Where) -----------------------------------------
+
+'where' is the overview or 'who did this?' filter
+
+dang, this one got complex fast
+
+0: dbref of lair
+1: trait to filter, if any
+
+--
+
+&DISP.LAIR.CONTRIBUTORS.WHERE #14800=
+	strcat( 
+		setq( l, 
+			cat( CONTRIB.%0, setdiff( lattr( %0/CONTRIB.* ), CONTRIB.%0 ))
+		), 
+
+@@ grab contributors that match %1, if exists
+		setq( w, 
+			filter( 
+				fil.contributer-has-trait, 
+				%ql, 
+				@@( idelim ), @@( odelim ), 
+				%0, 
+				if( t( strlen( %1 )), %1, * )
+			) 
+		), 
+
+		header( [name( %0 )] : +Lair [xget( %0, number )] ), %r, 
+		if( t( strlen( %1 )), header( Filter For: [edit( %1, _, %b )] )%r ), 
+
+		ansi( h, ljust( Source, 25 ), h, Contributions ), %r, 
+		divider( ), %r, 
+		iter( %qw, 
+			strcat( 
+@@ grab contributions that match %1, if exists
+				setq( c, 
+					if( t( strlen( %1 )), 
+						trim( 
+							strcat( 
+								graball( xget( %0, %i0 ), %1:*, |, | ), 
+								graball( xget( %0, %i0 ), %1.*:*, |, | )
+							)
+						), 
+						xget( %0, %i0 )
+					)
+				), 
+				setq( f, 
+					u( f.format.contributions, 
+						iter( %qc, 
+							if( t( strlen( %1 )), %i0, before( %i0, : )), 
+							|, %,%b 
+						)
+					)
+				), 
+@@ .. name
+				ljust( 
+					[ansi( h, [name( after( %i0, . ))] )]
+					[if( 
+						strmatch( after( %i0, . ), %0 ), 
+						ansi( xh, %b(lair) )
+					)], 
+					24 
+				), %b, 
+@@ .. contrib
+				edit(
+					wrap( 
+						%qf, 
+						sub( 78, 25 ), 
+						left, 
+						@@( left text ), @@( right text ), 
+						25 
+					), 
+					_, %b 
+				)
+			), 
+			, %r 
+		), %r, 
+		footer( )
+	)
+
+
+--------------------------------------------------------------------------------
+-- DISPLAY: Lair Contributions (Who) -------------------------------------------
+
+Who contributed this trait?
+
+--
+
+&DISP.LAIR.CONTRIBUTORS.WHO #14800=
+	strcat( 
+		setq( c, 
+			if( t( strlen( %2 )), 
+				filter( fil.contributers-trait, 
+					xget( %0, CONTRIB.%1 ), |, |, %2 
+				), 
+				xget( %0, CONTRIB.%1 )
+			)
+		), 
+		header( [name( %0 )] : +Lair [xget( %0, number )] ), %r, 
+		header( 
+			[name( %1 )]'s Contributions
+			[if( t( strlen( %2 )), %b: [edit( %2, _, %b )] )]
+		), %r, 
+		iter( %qc, 
+			strcat( 
+
+				setq( f, 
+					edit( 
+						u( f.format.contribution-one, before( %i0, : )), 
+						_, %b 
+					)
+				), 
+
+				ansi( h, %qf ), %b, 
+				rpad( 
+					%b[before( after( %i0, : ), / )], 
+					sub( 39, strlen( %qf )), 
+					%xh%xx.%xn 
+				), %b, 
+				if( 
+					t( after( after( %i0, : ), / )), 
+					%r%b %b[after( after( %i0, : ), / )] 
+				), 
+			), 
+			|, %r 
+		), %r, 
+		footer( )
+	)
+
+
+--------------------------------------------------------------------------------
+-- FILTER: Contributer and Trait -----------------------------------------------
+
+&FIL.CONTRIBUTER-HAS-TRAIT #14800=
+	cor( 
+		t( graball( xget( %1, %0 ), %2:*, |, | )), 
+		t( graball( xget( %1, %0 ), %2.*:*, |, | ))
+	)
+
+--
+
+&FIL.CONTRIBUTERS-TRAIT #14800=
+	cor( 
+		t( match( %0, %1:*, | )), 
+		t( match( %0, %1.*:*, | ))
+	)
+
+
+
+================================================================================
+== LAIR ACCESS =================================================================
+
+	+lair/player <num>=<character name>
+	+lair/player <num>=!<character name>
+	+lair/faction <num>=<character name>
+	+lair/faction <num>=!<character name>
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Player (give/remove access to a player) -----------------------
+
+&CMD.LAIR.ACCESS.PLAYER #14800=$^\+lairs?/player (.+?)=(!)?(.+)$:
+	@assert isstaff( %# )={ 
+		@pemit  %#=[ansi( hr, LAIR: )] Staff Only. 
+	}; 
+	@assert hasattr( me, LAIRS_%1 )={ 
+		@pemit %#=[ansi( hr, LAIR: ) %1 is not a Lair. }; 
+
+	@assert t( pmatch++( %3 ))={ 
+		@pemit %#=[ansi( hr, LAIR: )] %3 didn't match a player. 
+	}; 
+
+	@pemit %#=u( F.ACCESS.PLAYER, v( LAIRS_%1 ), pmatch++( %3 ), %2 ); 
+
+--
+
+@set #14800/cmd.lair.access.player=regexp
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Faction (give/remove access to a faction) ---------------------
+
+&CMD.LAIR.ACCESS.FACTION #14800=$^\+lairs?/faction (.+?)=(!)?(.+)$:
+	@assert isstaff( %# )={ 
+		@pemit %#=[ansi( hr, LAIR: )] Staff Only. 
+	}; 
+
+	@assert hasattr( me, LAIRS_%1 )={ 
+		@pemit %#=[ansi( hr, LAIR: )] %1 is not a Lair. 
+	}; 
+
+	@assert t( locate( #2832, %3, i ))={ 
+		@pemit %#=[ansi( hr, LAIR: )] %3 didn't match a faction.
+	}; 
+
+	@pemit %#=u( F.ACCESS.FACTION, v( LAIRS_%1 ), locate( #2832, %3, i ), %2 ); 
+
+--
+
+@set #14800/cmd.lair.access.faction=regexp
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: Add access to a player --------------------------------------------
+
+&F.ACCESS.PLAYER #14800=
+	switch( 
+		[t( match( xget( %0, PLAYER ), %1 ))]:
+		[strmatch( %2, ! )],
+
+		1:0, 
+		[ansi( hr, LAIR: )] Player already has access to that lair., 
+
+		0:1, 
+		[ansi( hr, LAIR: )] Player already doesn't have access to that lair., 
+
+		0:0, 
+		[set( %0, PLAYER:[setunion( xget( %0, PLAYER ), %1 )] )]
+		[ansi( h, LAIR: )] Added '[name( %1 )]' to '[name( %0 )]' 
+			player access list., 
+
+		1:1, 
+		[set( %0, PLAYER:[setdiff( xget( %0, PLAYER ), %1 )] )]
+		[ansi( h, LAIR: )] Removed '[name( %1 )]' from '[name( %0 )]' 
+			player access list., 
+
+		[ansi( hr, LAIR: )] Unknown error in: F.ACCESS.PLAYER
+
+	)
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: Add access to a faction -------------------------------------------
+
+&F.ACCESS.FACTION #14800=
+	switch( 
+		[t( match( xget( %0, FACTION ), lcstr( name( %1 )), | ))]:
+		[strmatch( %2, ! )],
+
+		1:0, 
+		[ansi( hr, LAIR: )] Faction already has access to that lair., 
+
+		0:1, 
+		[ansi( hr, LAIR: )] Faction already doesn't have access to that lair., 
+
+		0:0, 
+		[set( %0, FACTION:[setunion( xget( %0, FACTION ), lcstr( name( %1 )), |, | )] )]
+		[ansi( h, LAIR: )] Added '[name( %1 )]' to '[name( %0 )]' 
+			faction access list., 
+
+		1:1, 
+		[set( %0, FACTION:[setdiff( xget( %0, FACTION ), lcstr( name( %1 )), |, | )] )]
+		[ansi( h, LAIR: )] Removed '[name( %1 )]' from '[name( %0 )]' 
+			faction access list., 
+
+		[ansi( hr, LAIR: )] Unknown error in: F.ACCESS.FACTION
+
+	)
+
+
+
+================================================================================
+== LAIR NOTES (goddammit) ======================================================
+
+	+lair/note <num>/<note name>[=[+]<note>]
+	+lair/show <num>/<note name>[=<target>] <-- doesn't exist yet
+	+lair/delnote <num>/<note name>
+
+Base commands in both forms list the note to the person viewing.
+	/note - general setting & appending
+	/show - general viewing & proving
+
+Lair notes are stored: 
+	&NOTE.<name> <lair object>=<timestamp>|<set by dbref>|<note>
+
+Note names: 
+	* must be able to be set on an attribute name
+	* be no more than 24 characters
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Notes: Show, Create, or Append Notes --------------------------
+
+	+lair/notes <num> - list all notes on lair <num>
+	+lair/notes <num>/<name> - show me note <name>
+	+lair/notes <num>/<name>=<notes> - create or overwrite note <name>
+	+lair/notes <num>/<name>=+<notes> - create or append to note <name>
+		'append' prepends a single space
+
+--
+
+&CMD.LAIR.NOTES #14800=$^\+lairs?/notes?( (\s|.)+)?$:
+
+	think cat( 
+		num:, setr( a, trim( first( %1, / ))), %r, 
+		name:, setr( b, edit( trim( rest( before( %1, = ), / )), %b, _ )), %r, 
+		note:, setr( c, trim( rest( %1, = ))), %r, 
+		lair dbref:, setr( l, v( LAIRS_%qa )), %r, 
+	); 
+
+	@assert t( %ql )={ 
+		@pemit %#=[ansi( hr, LAIR: )] '%qa' is not a valid Lair ID. 
+	}; 
+
+	@assert u( f.authed, %ql, %# )={ 
+		@pemit %#=[ansi( hr, LAIR: )] You have no access to Lair %qa.
+	}; 
+
+	@if t( strlen( %qc ))=
+		@pemit %#=u( f.lair.notes.add, %ql, %#, %qa, %qb, %qc ), 
+		@pemit %#=u( f.lair.notes.show, %ql, %#, %qa, %qb, %# ); 
+
+--
+
+@set #14800/cmd.lair.notes=regexp
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: Add Lair Note -----------------------------------------------------
+
+&F.LAIR.NOTES.ADD #14800=
+	case( 0, 
+		isstaff( %1 ), 
+		[ansi( hr, LAIR: )] Staff Only., 
+
+		cand( valid( attrname, note_%qb ), lte( strlen( %qb ), 24 )), 
+		[ansi( hr, LAIR: )] That is a bad note name., 
+
+		strcat( 
+			setq( x, xget( %0, note_%3 )), 
+			setq( a, strmatch( %4, +* )), 
+			setq( n, if( %qa, rest( %4, + ), %4 )), 
+			set( 
+				%0, 
+				NOTE_%3:
+				[secs( )]|
+				%1|
+				[trim( 
+					cat( 
+						if( %qa, rest( rest( %qx, | ), | )), 
+						%qn 
+					)
+				)]
+			), 
+			[ansi( h, LAIR: )] 
+				Note for Lair %2 
+				[case( 1, not( %qx ), created, %qa, appended, replaced )]. 
+		)
+	)
+
+
+--------------------------------------------------------------------------------
+-- FUNCTION: Show Lair Note ----------------------------------------------------
+
+To someone or someones.
+
+--
+
+&F.LAIR.NOTES.SHOW #14800=
+	case( 0, 
+		t( setr( x, xget( %0, note_%3 ))), 
+		[ansi( hr, LAIR: )] No note with that name on Lair %2., 
+
+@@ .. person is showing the note to themselves
+		comp( %1, %4 ), 
+		strcat( 
+			header( +Lair %2 Note ), %r, 
+			u( disp.lair.note, %0, %3, %qx ), %r, 
+			footer()
+		), 
+
+@@ .. person is showing the note to others
+		(lair system cannot yet show notes to others%, planned for +lair/show)
+
+	)
+
+
+--------------------------------------------------------------------------------
+-- DISPLAY: One Lair Note ------------------------------------------------------
+
+&DISP.LAIR.NOTE #14800=
+	strcat( 
+		ansi( h, ucstr( edit( %1, _, %b ))), %r, 
+		ansi( xh, 
+			([convsecs( elements( %2, 1, | ))]%, 
+			set by [name( elements( %2, 2, | ))]) 
+		), 
+		%r%r, 
+		rest( rest( %2 , | ), | )
+	)
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Delete a Lair Note -------------------------------------------------
+
+&CMD.LAIR.DELNOTE #14800=$^\+lairs?/delnote ([^/]+)/(.+)$:
+
+	@assert isstaff( %# )={ 
+		@pemit %#=[ansi( hr, LAIR: )] Staff only.
+	}; 
+
+	think cat( 
+		num:, %1, %r, 
+		name:, setr( n, edit( before( %2, = ), %b, _ )), %r, 
+		yes?:, setr( y, t( member( rest( %2, = ), YES ))), %r, 
+		lair dbref:, setr( l, v( LAIRS_%1 )), %r, 
+	); 
+
+	@assert t( %ql )={ 
+		@pemit %#=[ansi( hr, LAIR: )] '%1' is not a valid Lair ID. 
+	}; 
+
+	@assert hasattr( %ql, note_%qn )={ 
+		@pemit %#=[ansi( hr, LAIR: )] No note with that name. 
+	}; 
+
+	@assert %qy={
+		@pemit %#=[ansi( hr, LAIR: )] Are you sure? Type the following: %r
+			%b %b[ansi( h, +lair/delnote %1/[before( %2, = )]=YES )]
+	}; 
+
+	@pemit %#=
+		strcat( 
+			center( ansi( hr, *** DELETING *** DELETING *** DELETING *** ), 79 ), %r, 
+			u( f.lair.notes.show, %ql, %#, %1, %qn, %# ), %r, 
+			center( ansi( hr, *** DELETING *** DELETING *** DELETING *** ), 79 ), 
+		); 
+
+	@set %ql=NOTE_%qn:
+
+--
+
+@set #14800/cmd.lair.delnote=regexp
+
+
+
+================================================================================
+== DELETE/ARCHIVE LAIR =========================================================
+
+	+lair/delete <number>
+	+lair/archive [<number>]
+	+lair/restore <number>
+	+lair/destroy <number>
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Delete --------------------------------------------------------
+
+We're calling it delete, but we are hanging on to it for now.
+
+On #14800: &lairs_<old number> --> &archives_<new number>
+On lair object, &number: <old number> --> <new number>
+
+--
+
+&CMD.LAIR.DELETE #14800=$^\+lairs?/delete ([^=]+)(=(.+))?$:
+	think 
+		num: [setr( m, %1 )] %r
+		yes?: [setr( y, member( %3, YES ))]; 
+
+	@assert isstaff( %# )={ 
+		@pemit  %#=[ansi( hr, LAIR: )] Staff Only. 
+	}; 
+
+	@assert t( setr( l, v( LAIRS_%qm )))={ 
+		@pemit %#=[ansi( hr, LAIR: )] '%qm' is not a Lair. 
+	}; 
+
+	@assert %qy={ 
+		@pemit %#=[ansi( hr, LAIR: )] 
+		If you are sure, please type: +lair/delete %qm=YES 
+	}; 
+
+	think 
+		lair name: [setr( n, name( v( LAIRS_%qm )))]
+		archive number: [setr( a, u( f.first-unused, ARCHIVES ))]; 
+
+	@set me=LAIRS_%qm:; 
+	@set me=ARCHIVES_%qa:%ql; 
+	&number %ql=%qa; 
+
+	@pemit %#=[ansi( h, LAIR: )] Archived lair %qm ('%qn') as '%qa'.; 
+
+--
+
+@set #14800/cmd.lair.delete=regexp
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Archive -------------------------------------------------------
+
+List archived lairs.
+
+--
+
+&CMD.LAIR.ARCHIVE #14800=$^\+lairs?/archive[s|d]?$:
+	@assert gte( attrcnt( me/ARCHIVES_* ), 0 )={ 
+		@pemit %#=
+			[header( +Lair System (archives) )]%r%r
+			[center( No Archived Lairs, 78 )]%r%r
+			[footer( )] 
+	}; 
+
+	@pemit %#=
+		[header( +Lair System (archives) )]%r
+		[u( DISP.LAIRS-LIST, %#, ARCHIVES )]%r
+		[footer( )]; 
+
+--
+
+@set #14800/CMD.LAIR.ARCHIVE=regexp
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Archive <number> ----------------------------------------------
+
+List everything (and I mean everything) about an archived lair.
+
+--
+
+&CMD.LAIR.ARCHIVE.ITEM #14800=$^\+lairs?/archive[s|d]? (.+)$:
+	@assert t( setr( l, v( ARCHIVES_%1 )))={ 
+		@pemit %#=[ansi( hr, LAIR: )] %1 is not an archived Lair. 
+	}; 
+
+	@switch 
+		cor( 
+			isstaff( %# ), 
+			u( f.authed, %ql, %# )
+		)=
+	0, { 
+		@pemit %#=[ansi( hr, LAIR: )] 
+		You don't have access to that archived lair. 
+	}, 
+	1, { 
+		@pemit %#=
+			[header( +Lair %1 (archived) )]%r
+			[u( DISP.LAIR, %ql )]%r
+			[footer( )] 
+	}
+
+--
+
+@set #14800/cmd.lair.archive.item=regexp
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Restore <number> ----------------------------------------------
+
+Restore an archived lair to the full system.
+
+--
+
+&CMD.LAIR.RESTORE #14800=
+$^\+lairs?/restore ([^=]+)(=(.+))?$:
+	think 
+		num: [setr( m, %1 )] %r
+		yes?: [setr( y, member( %3, YES ))]; 
+
+	@assert isstaff( %# )={ 
+		@pemit  %#=[ansi( hr, LAIR: )] Staff Only. 
+	}; 
+
+	@assert t( setr( l, v( ARCHIVES_%qm )))={ 
+		@pemit %#=[ansi( hr, LAIR: )] '%qm' is not an archived Lair. 
+	}; 
+
+	@assert %qy={ 
+		@pemit %#=[ansi( hr, LAIR: )] 
+		If you are sure, please type: +lair/restore %qm=YES 
+	}; 
+
+	think 
+		lair name: [setr( n, name( v( ARCHIVES_%qm )))]
+		archive number: [setr( a, u( f.first-unused, LAIRS ))]; 
+
+	@set me=ARCHIVES_%qm:; 
+	@set me=LAIRS_%qa:%ql; 
+	&number %ql=%qa; 
+
+	@pemit %#=[ansi( h, LAIR: )] Restored lair %qm ('%qn') as '%qa'.; 
+
+--
+
+@set #14800/cmd.lair.restore=regexp
+
+
+--------------------------------------------------------------------------------
+-- COMMAND: Lair/Destroy <number> ----------------------------------------------
+
+Permanently remove an archived lair.
+
+--
+
+&CMD.LAIR.DESTROY #14800=
+$^\+lairs?/destroy ([^=]+)(=(.+))?$:
+	think 
+		num: [setr( l, %1 ))] %r
+		yes?: [setr( y, member( %3, YES ))]; 
+
+	@assert isstaff( %# )={ 
+		@pemit  %#=[ansi( hr, LAIR: )] Staff Only. 
+	}; 
+
+	@assert hasattr( me, ARCHIVES_%ql )={ 
+		@pemit %#=[ansi( hr, LAIR: )] '%ql' is not an archived Lair. 
+	}; 
+
+	@assert %qy={ 
+		@pemit %#=[ansi( hr, LAIR: )] 
+		If you are sure, please type: +lair/destroy %ql=YES 
+	}; 
+
+	think lair name: [setr( n, name( v( ARCHIVES_%ql )))]; 
+
+	@destroy/instant [v( ARCHIVES_%ql )]; 
+	@set me=ARCHIVES_%ql:; 
+	@pemit %#=[ansi( h, LAIR: )] Destroyed archived Lair %ql ('%qn').; 
+
+--
+
+@set #14800/cmd.lair.destroy=regexp
+
+
+
+================================================================================
+== HELP FILES ==================================================================
+
+Media-Wiki Versions
+
+--------------------------------------------------------------------------------
+
+The lairs system has its own database for locations that have shared merits.
+
+Typing +lair and +lairs is synonymous.
+
+It is very important that you familiarize yourself with: http://thereachmux.org/wiki/Lairs
+
+=== Viewing Lairs ===
+
+All lair-viewing commands can be used by anyone with access to that lair. Contributing to a lair is not enough; you must have access (see: [[Mush_help:Lair 3]]).
+
+;+lair:A list of lairs.
+;+lair <number>:Information about that lair. Includes access, notes, and total of all contributions. Staff can see location notes.
+;+lair/note <number>/<note name>:View that note.
+;+lair/list <number>:List of who contributed what to the lair.
+;+lair/list <number>/<name>:Details on what that person contributed to the lair.
+;+lair/list <number>=<trait>:Everyone who has contributed <trait>.
+
+Note: <trait> can also be <trait>.<subtrait>, which is explained in the next section.
+
+Continued in [[Mush_help:Lair 2]]
+
+--------------------------------------------------------------------------------
+
+=== Adding & Removing Contributions ===
+
+In all cases, <player> may be the name or dbref of the lair itself, indicating NPC contributions. This is true for the '/list' switch, too.
+
+'''+lair/con <number>/<player>=<trait>:<level>'''
+:The simplest form. Add a player's contribution to the lair at <level>.
+:You may with this, and all forms of this command, add a short note at the end with: /<short note>
+:(Note to Staff: This does not spend XP.)
+'''+lair/con <number>/<player>=<trait>.<subtrait>:<level>'''
+:The same as above, but here as a reminder that if you are adding a sub-trait, add it here.
+'''+lair/con <number>/<player>=!<trait>.<subtrait>'''
+:Remove the player's contribution from the lair. To be forgiving, the system will take '!<trait>.<subtrait>:<level>/<notes>' but will ignore level and notes.
+
+=== Traits & Subtraits ===
+;+lair/traits: What shared merits can be added. Please note:
+:* This list is very long
+:* This list is very exact.
+:If a trait is, for example, 'Staff (Crafts)', then this is the entire name of that trait.
+;+lair/trait <trait name>:Adds that trait.
+;+lair/trait !<trait name>:Removes that trait.
+
+Sub-traits come after a dot and can be set to anything; the lairs system groups totals on '<trait>.<subtrait>', so that 'Retainer.Bob' is not 'Retainer.Ted'.
+
+=== Lair Types ===
+
+Lair types are mainly only used when setting up the lair and can help in filtering and finding specific lairs.
+
+;+lair/types: What kind of lairs there are.
+;+lair/type <type name>: Add that type.
+;+lair/type !<type name>: Remove that type.
+
+Continued in [[Mush_help:Lair 3]]
+
+--------------------------------------------------------------------------------
+
+=== Lair Access ===
+;+lair/faction <number>=<faction name>:Add that faction list to be able to see this lair.
+;+lair/faction <number>=!<faction name>:Removes it.
+;+lair/player <number>=<player name>:Add that player list to be able to see this lair.
+;+lair/player <number>=!<player name>:Removes them.
+
+=== Creating Lair Notes ===
+;+lair/note <number>/<note name>:View that note.
+;+lair/note <number>/<note name>=<note text>:Create or overwrite that note.
+;+lair/note <number>/<note name>=+<note text>:Append to that note, appends with a single space.
+
+=== Creating New Lairs ===
+;+lair/create <lair name>=<type>/<dbref location>
+:Creates a new lair and associates it with <dbref location>. If there is no dbref location for the lair, use 'OFF', but also add a note about vaguely where the lair is in cause RP demands it.
+
+=== Archiving, Restoring, & Destroying Lairs ===
+;+lair/delete <number>:Moves a lair to the archive.
+;+lair/restore <archived number>:Moves a lair back into the active list.
+;+lair/destroy <archived number>:Destroys an archived lair permanently.
+;+lair/archives: See what lairs are archived.
+;+lair/archive <archived number>:Check out that lair.
+
+'''Fin.'''

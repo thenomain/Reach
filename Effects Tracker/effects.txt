@@ -1,0 +1,120 @@
+@	Reach Mux
+@	Effects Tracking System
+@	Coded by #6457=Gizmo AKA Ourea, Alzie, Teuton
+@	Coded for #6457=The Reach Mux
+@	Email #6457=ccubed.techno@gmail.com
+@----------------------------------------------------------------------------
+@	Purpose #6457=Track long term effects on players. 
+@----------------------------------------------------------------------------
+@	Organization
+@	F.* - Function - Player does not interact
+@	CMD.* - Command - Player does interact
+@	VALIDATE.* - Validation Function - Checks Form Input against validator
+@	FORM.* - Form Template - Player Form for directed data input
+@	F.DISP.* - Display Formatter - Formats displayed data to a template
+@	F.EDIT.* - Attribute Edit Template - Player interaction function that makes sure data conforms to a template
+@	DATA.* - Data - Holds information needed for proper operation
+@----------------------------------------------------------------------------
+&DATA.CID  #6457==7
+
+&DATA.EFFECTS #6457=#1840
+
+@	CMD.EFFECTS
+@	Usage: +effects
+@	Returns: List of effects in system modified by access rights
+&CMD.EFFECTS #6457=$+effects:@assert [words(lcon(xget(%!,DATA.EFFECTS),OBJECT))]=@pemit %#=[ansi(hr,Effects:)]%bNo effects in the system.;@assert [cor(orflags(%#,W Z w),setr(a,u(F.HAS_EFFECTS,%#)))]=@pemit %#=[ansi(hr,Effects:)]%bYou aren't currently being affected by any powers.;@pemit %#=[u(F.DISP.RITUALS,%#)]
+
+@	CMD.EFFECTS.OTHERS
+@	Usage: +effects <name>
+@	Returns: List of effects in system related to <name>
+&CMD.EFFECTS.OTHERS #6457=$+effects *:@assert [orflags(%#,W Z w)];@assert [pmatch+(%0)]=@pemit %#=[ansi(hr,Effects:)]%bCan't find that player.;@assert [u(F.HAS_EFFECTS,pmatch+(%0))]=@pemit %#=[ansi(hr,Effects:)]%bNo Effects for that player.;@pemit %#=[u(F.DISP.RITUALS,pmatch+(%0))]
+
+@	CMD.EFFECTS.ADD
+@	Usage: +effects/add <power name>
+@	Returns: Begins Form process to request a new effect
+&CMD.EFFECTS.ADD #6457=$+effects/add *:@assert [not(strmatch(%0,*|*)]=@pemit %#=[ansi(hr,Effects:)]%bYou only need to provide the name of the power here. For Example #6457=Brand the Blooded.;@set %!=%#_current:%0|||;@set %!=%#_current_form:START;@pemit %#=[u(FORM.START)]
+
+@	CMD.EFFECTS.EDIT
+@	Usage: +effects/edit <thing>=<value>
+@	Returns: As per instructions, edit Power, Source, Target, Notes, Ends or Affects of an Effect.
+&CMD.EFFECTS.EDIT #6457=$+effects/edit *=*:@assert [hasattr(%!,%#_current)]=@pemit %#=[ansi(hr,Effects:)]%bYou aren't currently building a new effect.;@assert [match(Power Source Target Ends Notes Affects Bucket Dice,%0)]=@pemit %#=[ansi(hr,Effects:)]%bYou can only set Power, Source, Target, Notes, Ends or Affects.;@switch [strmatch(%0,Notes)][strmatch(%0,Affects)][strmatch(%0,Dice)][strmatch(%0,Bucket)]=0000,@pemit %#=[u(F.EDIT,%0,%1)],1000,@pemit %#=[u(F.EDIT.NOTES,%1)],0100,@pemit %#=[u(F.EDIT.AFFECTS,%1)],0010,@pemit %#=[u(F.EDIT.DICE,%1)],0001,@pemit %#=[u(F.EDIT.BUCKETS,%1)]
+
+@	CMD.EFFECTS.REMOVE
+@	Usage: +effects/remove #
+@	Returns: If staff, Remove an effect from the system.
+&CMD.EFFECTS.REMOVE #6457=$+effects/remove *:@assert [orflags(%#,W Z w)];@assert [setr(a,[u(F.FIND,%0)])]=@pemit %#=[ansi(hr,Effects:)]%bCan't find an effect with that ID.;[setq(b,[xget(%qa,source)]|[xget(%qa,target)])];@destroy %qa;@pemit %#=[ansi(hr,Effects:)]%bRemoved effect %0.
+
+@	CMD.EFFECTS.CURRENT
+@	Usage: +effects/current
+@	Returns: Display current form status
+&CMD.EFFECTS.CURRENT #6457=$+effects/current:@assert [hasattr(%!,%#_current)]=@pemit %#=[ansi(hr,Effects:)]%bYou are not currently building an effect.;@pemit %#=[u(FORM.[xget(%!,%#_current_form)])]
+
+@	CMD.EFFECTS.NEXT
+@	Usage: +effects/next
+@	Returns: Attempt to move to next step in the application process
+&CMD.EFFECTS.NEXT #6457=$+effects/next:@assert [hasattr(%!,%#_current)]=@pemit %#=[ansi(hr,Effects:)]%bYou are not currently building an effect.;@pemit %#=[u(VALIDATE.[xget(%!,%#_current_form)])]
+
+@	CMD.EFFECTS.NOTES
+@	Usage: +effects/notes #=<notes>
+@	Returns: Add staff notes to an effect. Only viewable by staff.
+&CMD.EFFECTS.NOTES #6457=$+effects/notes *=*:@assert [orflags(%#,W Z w)];@assert [setr(a,[u(F.FIND,%0)])]=@pemit %#=[ansi(hr,Effects:)]%bCouldn't find an effect with that ID.;@set %qa=staff_notes:%1;@pemit %#=[ansi(hr,Effects:)]%bUpdated staff notes on effect %0.
+
+@	CMD.EFFECTS.VIEW
+@	Usage: +effects/view #
+@	Returns: View details for an effect
+&CMD.EFFECTS.VIEW #6457=$+effects/view *:@assert [u(F.EXISTS,%0)]=@pemit %#=[ansi(hr,Effects:)]%bThat effect ID doesn't exist.;@assert [cor(orflags(%#,W Z w),u(F.CAN_ACCESS,%#,%0))]=@pemit %#=[ansi(hr,Effects:)]%bYou don't have access to that effect.;@pemit %#=[u(DISP.DETAILS,%0)]
+
+@	CMD.EFFECTS.COMPLETE
+@	Usage: +effects/complete #
+@	Returns: Attempt to complete your application for a new effect.
+@	Opens: A job for your new effect to be approved.
+&CMD.EFFECTS.COMPLETE #6457=$+effects/complete:@assert [hasattr(%!,%#_current)]=@pemit %#=[ansi(hr,Effects:)]%bYou aren't currently building an effect.;[if(xget(%!,%#_current_bucket),[setq(k,locate(#2594,xget(%!,%#_current_bucket),i))],[setq(k,locate(#2594,xget(%#,_template),i))])][setq(l,after(extract(xget(%!,DATA.BUCKETS),match(xget(%!,DATA.BUCKETS),[xget(%#,_template)]*,|),1,|),:))];[setq(n,create(xget(%!,data.cid),10,t))];@set %!=DATA.CID:[inc(xget(%!,DATA.CID))];@tel %qn=[xget(%!,DATA.EFFECTS)];@set %qn=POWER:[extract(xget(%!,%#_current),1,1,|)];@set %qn=SOURCE:[switch([setr(w,[extract(xget(%!,%#_current),2,1,|)])],Me,[name(%#)],%qw)];@set %qn=TARGET:[switch([setr(w,[extract(xget(%!,%#_current),3,1,|)])],Me,[name(%#)],%qw)];@set %qn=ENDS:[extract(xget(%!,%#_current),4,1,|)];@set %qn=AFFECTS:[xget(%!,%#_current_affects)];@if [hasattr(%!,%#_current_faction_link)]=@set %qn=FACTION_CHECK:1;@set %qn=STATUS:0;[if(hasattr(%!,%#_current_autodie),[u(#18850/f.roll,[setr(0,[xget(%!,%#_current_autodie)])],10,0,0,0,0,0)][setq(t,[u(#18850/LIT.HEADER,Autodice)]%R[space(4)]Rolled [if(gt(%q0,0),%qS [if(or(gt(%qS,1), eq(%qS,0)),Successes,Success)] [if(%qE,for an exceptional success.)],a chance die for [switch(%qS,0,a failure,1,a success,-1,a dramatic failure,successes)])]%R[space(4)]< [iter(trim(%qU),[if(or(and(gt(%q0,0),gte(%i0,8)),and(eq(%i0,10),lte(%q0,0))),[ansi(hw,%i0)],[ansi(hx,%i0)])], ,%b)] >%R[u(#18850/LIT.FOOTER,%q0)])])];[setq(j,inc(xget(#2564,jobs_num)))];@dolist CURRENT CURRENT_FORM CURRENT_NOTES CURRENT_AFFECTS CURRENT_BUCKET CURRENT_AUTODIE=@set %!=%#_##:;@pemit %#=[ansi(hr,Effects:)]%bSubmitting your request to staff!;@trigger #2564/TRIG_CREATE=%#,%ql,2,Effect Request #6457=[xget(%qn,power)],[name(%#)] has submitted a request to have [xget(%qn,power)] approved. This power is targetting [if(hasattr(%qn,faction_check),the faction [after(xget(%qn,target),:)],the player [xget(%qn,target)])]. Please take a look and consider approving it!%R%RYou can view more details with +effects/view [name(%qn)].[if(%qt,%RAlso! The player asked us to roll %q0 dice for them! The result is listed below.%R%R%qt)],%#,%qk
+
+&F.DISP.RITUALS #6457=[header(Effects System)]%R[ljust([ansi(nw,Normal)],20)][ljust([ansi(nr,3 Days)],20)][ljust([ansi(ny,7 Days)],20)][ljust(ansi(hm,Unapproved),20)]%R[divider()]%R[ljust(ID,4)]%b[ljust(Name,40)]%b[ljust(Source,18)]%b[ljust(Target,18)]%R[divider()]%R[iter(sort(lcon(xget(%!,DATA.EFFECTS),OBJECT)),[if(cor(isstaff(%0), u(F.CAN_ACCESS,%0,%i0)),u(DISP.FORMAT,%i0))], ,@@)][footer()]
+
+&F.DISP.AFFECTS #6457=[iter(xget(%!,%#_current_affects),center([ansi(hw,[capstr(extract(%i0,2,1,:))])] [if(strmatch(setr(g,extract(%i0,3,1,:)),-*),[ansi(hr,%qg)],[ansi(hg,+%qg)])],80),|,%R)]
+
+&F.EDIT #6457=[setq(x,match(Power Source Target Ends,%0))][set(%!,%#_current:[replace(xget(%!,%#_current),%qx,%1,|,|)])][if(cand(strmatch(%0,target),strmatch(%0,faction*)),[set(%!,%#_current_faction_link:1)])][ansi(hr,Effects:)]%bUpdated %0 to be %1. Use +effects/current to review and +effects/next to continue if finished with this stage.
+
+&F.EDIT.NOTES #6457=[set(%!,%#_current_notes:%0)][ansi(hr,Effects:)]%bUpdated notes. Use +effects/current to review and +effects/next to continue if finished with this stage.
+
+&F.EDIT.AFFECTS #6457=[switch(strmatch(%0,!*),1,[set(%!,%#_current_affects:[ldelete(xget(%!,%#_current_affects),match(xget(%!,%#_current_affects),after(%0,!),|),|,|)])][ansi(hr,Effects:)]%bRemoved [extract(%0,2,1,:)] affect from your effect.,0,[if(hasattr(%!,%#_current_affects),[set(%!,%#_current_affects:[xget(%!,%#_current_affects)]|%0)],[set(%!,%#_current_affects:%0)])][ansi(hr,Effects:)]%bAdded [extract(%0,2,1,:)] affect to your effect.)]
+
+&F.EDIT.DICE #6457=[if([u(#18850/PARSE.GETDICE,%0)]%q0,[set(%!,%#_current_autodie:%q0)][ansi(hr,Effects:)]%bUpdated your autodie pool. It resulted in %q0 dice. You should double check this probably. See +effects/current to review or +effects/next when finished.,[ansi(hr,Effects:)]%bThe pool you gave resulted in 0 dice. You probably didn't mean for that to happen so nothing was changed. See +effects/current to review.)]
+
+&F.EDIT.BUCKETS #6457=[if(cand(words(locate(#2594,%0,i)),match(promethean hunter mortal vampire general cults immortal allstaff werewolf feral mage possessed geist changeling,%0)),[set(%!,%#_current_bucket:%0)][ansi(hr,Effects:)]%bSet your job bucket to %0.,[ansi(hr,Effects:)]%bCouldn't find %0 in the list of job buckets.)]
+
+&F.FIND #6457=[setq(x,locate(xget(%!,data.effects),%0,i))][if(%qx,%qx,0)]
+
+&F.EXISTS #6457=[t(words(locate(xget(%!,DATA.EFFECTS),%0,i)))]
+
+&F.CAN_ACCESS #6457=[setq(f,locate(xget(%!,DATA.EFFECTS),%1,i))][if(xget(%qf,faction_check),isfaction?(%0,after(xget(%qf,target),:)),match([xget(%qf,TARGET)] [xget(%qf,SOURCE)],[name(%0)]))]
+
+&DISP.FORMAT #6457=[switch([xget(%0,status)][not(strmatch(xget(%0,ends),Indefinite))],0*,[setq(c,hm)],11,[setq(c,u(DISP.COLOR,xget(%0,ends)))],10,[setq(c,nw)])][ansi(%qc,[ljust(name(%0),4)]%b[ljust(xget(%0,power),40)]%b[ljust(xget(%0,source),18)]%b[ljust(xget(%0,target),18)])]%R
+
+&DISP.COLOR #6457=[setq(t,convtime([extract(%0,1,1)] [extract(%0,2,1)] 00:00:00 [extract(%0,3,1)]))][setq(n,sub(%qt,secs()))][switch([lte(%qn,259200)][lte(%qn,604800)],1*,nr,01,ny,nw)]
+
+&DISP.AFFECTS #6457=[iter(xget(%0,affects),center([ansi(hw,[capstr(extract(%i0,2,1,:))])] [if(strmatch(setr(g,extract(%i0,3,1,:)),-*),[ansi(hr,%qg)],[ansi(hg,+%qg)])],80),|,%R)]
+
+&DISP.DETAILS #6457=[setq(x,[u(F.FIND,%0)])][header(xget(%qx,power))]%R%R[ljust([ansi(hw,Source:)]%b[xget(%qx,source)],30)][rjust([ansi(hw,Target:)]%b[if(hasattr(%qx,faction_check),after(xget(%qx,target),:),xget(%qx,target))],49)]%R[center([ansi(hw,Ends:)]%b[xget(%qx,ends)],79)]%R%R[divider(Attribute Modifiers)]%R%R[if(cand(hasattr(%qx,affects),t(xget(%qx,affects))),[u(DISP.AFFECTS,%qx)],[center([ansi(nr,No Affects Listed.)],79)]%R)]%R[divider(Player Notes)]%R[xget(%qx,notes)]%R[if(isstaff(%#),%R[divider(Staff Notes)]%R%R[xget(%qx,staff_notes)]%R)]%R[footer(Effect %0)]
+
+&VALIDATE.START #6457=[if([eq(ladd(iter(xget(%!,%#_current),t(%i0),|,|),|),4)],[set(%!,%#_current_form:notes)][u(FORM.NOTES)],[ansi(hr,Effects:)]%bYou didn't finish filling out the basic details. See +effects/current.)]
+
+&VALIDATE.NOTES #6457=[set(%!,%#_current_form:affects)][u(FORM.AFFECTS)]
+
+&VALIDATE.AFFECTS #6457=[set(%!,%#_current_form:staff)][u(FORM.STAFF)]
+
+&DATA.BUCKETS #6457=PROMETHEAN:#4917|CULTS:#18497|IMMORTAL:#526|FERAL:#6351|HUNTER:#4305|POSSESSED:#3545|GEIST:#3529|MAGE:#56|MORTAL+:#57|CHANGELING:#53|VAMPIRE:#54|WEREWOLF:#58|MORTAL:#131|BEATSKIN:#6351|BLOOD_BATHER:#526|BODY_THIEF:#526}ENSORCELLED:#53|ETERNAL:#526|GHOUL:#54|PROXIMUS:#56|PSYCHIC:#57|PURIFIED:#526|REBORN:#526|SHIFTER:#6351|SLEEPWALKER:#56|THAUMATURGE:#57|WARDEN:#526|WOLFBLOODED:#58
+
+&FORM.START #6457=[header(Effects Builder)]%R%R[center(Step One #6457=Basic Details,80)]%R%R%TThe first order of business for building your new effect and having it approved by staff is to give us some basic information about it. You already provided the name of the power being used, but now we need to know where it comes from (This can be you!) and who it targets (This can be you too!). We also need to know when it ends (This could be indefinite!). If the source or target are yourself just use me.%R[divider()]%R%R[center([ljust(ansi(hw,Power:),10)]%b[extract(xget(%!,%#_current),1,1,|)],80)]%R[center([ansi(ny,+effects/edit Power=Name)],80)]%R%R[center([ljust(ansi(hw,Source:),10)]%b[extract(xget(%!,%#_current),2,1,|)],80)]%R[center([ansi(ny,+effects/edit Source=Name or Me)],80)]%R%R[center([ljust(ansi(hw,Target:),10)]%b[extract(xget(%!,%#_current),3,1,|)],80)]%R[center([ansi(ny,+effects/edit Target=Name or Me or faction:name)],80)]%R%R[center([ljust(ansi(hw,Ends:),10)]%b[extract(xget(%!,%#_current),4,1,|)],80)]%R[center([ansi(ny,+effects/edit Ends=Mmm DD YYYY or Indefinite)],80)]%R%R[footer(Use +effects/current to view this)]%R[footer(Use +effects/next to continue)]
+
+&FORM.NOTES #6457=[header(Effects Builder)]%R%R[center(Step Two #6457=Notes,80)]%R%R%TThe second order of business is entirely optional but usually necessary. This is where you put any necessary information about the power in question. This could be the pledge details if you're a changeling making a pledge or it could be the promise in question for a demon. If your power has mechanical affects such as +1 strength, then save that for step three. This is simply a notes area for whatever information you feel is important to the power.%R[divider()]%R[center(Use +effects/edit [ansi(hw,Notes)]=[ansi(hw,Stuff)] to edit,80)]%R[divider()]%R[xget(%!,%#_current_notes)]%R[footer(Use +effects/current to view this)]%R[footer(Use +effects/next to continue)]
+
+&FORM.AFFECTS #6457=[header(Effects Builder)]%R%R[center(Step Three #6457=Affects,80)]%R%R%TThe third order of business is to let us know if your effect has any mechanical affects. Mainly, this will be for benefits to attributes and skills. Some may even provide merits. You'll add these below.%R[divider()]%R[center(To add an Affect use +effects/edit affects=category:thing:mod,80)]%R[center(If a merit requires a note add it after mod as in category:thing:mod:note,80)]%R[center(To remove an Affect put a ! before the value.,80)]%R[center(For example #6457=+effects/edit affects=!category:thing:mod,80)]%R%R[u(F.DISP.AFFECTS,%#)]%R[footer(Use +effects/current to view this)]%R[footer(Use +effects/next to continue)]
+
+&FORM.STAFF #6457=[header(Effects Builder)]%R%R[center(Step Four #6457=Staff,80)]%R%R%TThe fourth order of business is to tidy up some minor details to help staff approve your request quickly and easily. These details include telling me which staff this job should go to (if you aren't sure don't put a category and your template will decide) and what, if any, dice roll should happen. You can always leave both of these blank and do them yourself, but you could also fill them both out and let the wonder of automation take over from here.%R[divider()]%R%R[center(Currently your job will go to [default(%!/%#_current_bucket,[xget(%#,_template)])] Staff.,80)]%R[center([ansi(ny,To change this use +effects/edit bucket=template)],80)]%R%R[center(Currently this system will roll [default(%!/%#_current_autodie,0)] dice for you on job submission.,80)]%R[center([ansi(ny,To change this use +effects/edit dice=number or pool)],80)]%RThe pools are evaluated as per +roll. If you want flags then do rolls manually later.%R[footer(Use +effects/current to view this)]%R[footer(Use +effects/complete to submit)]
+
+&CMD.EFFECTS.APPROVE #6457=$+effects/approve *:@assert [orflags(%#,W Z w)];@assert [setr(a,[u(F.FIND,%0)])]=@pemit %#=[ansi(hr,Effects:)]%bCan't find an effect with that ID.;@set %qa=status:1;@pemit %#=[ansi(hr,Effects:)]%bApproved [xget(%qa,Source)]'s Effect #[name(%qa)].
+F.HAS_EFFECTS #6457=[t(match(iter(lcon(xget(%!,data.effects),OBJECT),[xget(##,source)]|[xget(##,target)], ,|),name(%0),|))]
+
+&CMD.EFFECTS.PROVE #6457=$+effects/prove *:@assert [u(F.EXISTS,%0)]=@pemit %#=[ansi(hr,Effects:)]%bThat effect ID doesn't exist.;@assert [cor(orflags(%#,W Z w),u(F.CAN_ACCESS,%#,%0))]=@pemit %#=[ansi(hr,Effects:)]%bYou don't have access to that effect.;@remit [loc(%#)]=[u(DISP.DETAILS,%0)]
